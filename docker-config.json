@@ -1,0 +1,12 @@
+{
+    "Database": {
+        "Username": "root",
+        "Password": "",
+        "Database": "webapi",
+        "Charset": "utf8mb4",
+        "Collation": "utf8mb4_unicode_ci",
+        "Hostname": "db",
+        "Port": 3306,
+        "Parameter": "parseTime=true&allowNativePasswords=true"
+    }
+}
