@@ -16,9 +16,9 @@ You can build a docker image from this repository and set it up along with a MyS
 
 ```bash
 # Create a docker image.
-docker build -t webapi:latest .
+docker build -t rove:latest .
 
-# Launch MySQL and the webapi with docker compose.
+# Launch MySQL and the rove with docker compose.
 docker-compose up
 
 # The database should now have the sample migrations applied.
