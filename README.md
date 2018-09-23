@@ -1,5 +1,9 @@
 # rove
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/josephspurrier/rove)](https://goreportcard.com/report/github.com/josephspurrier/rove)
+[![Build Status](https://travis-ci.org/josephspurrier/rove.svg)](https://travis-ci.org/josephspurrier/rove)
+[![Coverage Status](https://coveralls.io/repos/github/josephspurrier/rove/badge.svg?branch=master&timestamp=20180923-01)](https://coveralls.io/github/josephspurrier/rove?branch=master)
+
 ## MySQL Database Migration Tool Based on Liquibase
 
 This project is based off Liquibase, the database migration tool. It uses a slimmed down version of the DATABASECHANGELOG database table to store the applied changesets. It only supports SQL (no XML) migrations currently. For the most part, you can take your existing SQL migration files and use them with this tool. You can also import this package into your application and apply changesets without having to store the migrations on physical files. This allows you manage DB migrations inside of your application so you can distribute single binary applications.
