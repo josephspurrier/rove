@@ -12,8 +12,13 @@ import (
 func TestMigration(t *testing.T) {
 	db, unique := testutil.SetupDatabase()
 
+	// Set up rove.
+	r := rove.New()
+	r.MigrationFile = "testdata/success.sql"
+	r.EnvPrefix = unique
+
 	// Run migration.
-	err := rove.Migrate("testdata/success.sql", unique, 0, false)
+	err := r.Migrate(0)
 	assert.Nil(t, err)
 
 	// Count the records.
@@ -23,11 +28,11 @@ func TestMigration(t *testing.T) {
 	assert.Equal(t, 3, rows)
 
 	// Run migration again.
-	err = rove.Migrate("testdata/success.sql", unique, 0, false)
+	err = r.Migrate(0)
 	assert.Nil(t, err)
 
 	// Remove all migrations.
-	err = rove.Reset("testdata/success.sql", unique, 0, false)
+	err = r.Reset(0)
 	assert.Nil(t, err)
 
 	rows = 0
@@ -36,11 +41,11 @@ func TestMigration(t *testing.T) {
 	assert.Equal(t, 0, rows)
 
 	// Remove all migrations again.
-	err = rove.Reset("testdata/success.sql", unique, 0, false)
+	err = r.Reset(0)
 	assert.Nil(t, err)
 
 	// Run 2 migrations.
-	err = rove.Migrate("testdata/success.sql", unique, 2, false)
+	err = r.Migrate(2)
 	assert.Nil(t, err)
 
 	rows = 0
@@ -49,7 +54,7 @@ func TestMigration(t *testing.T) {
 	assert.Equal(t, 2, rows)
 
 	// Remove 1 migration.
-	err = rove.Reset("testdata/success.sql", unique, 1, false)
+	err = r.Reset(1)
 	assert.Nil(t, err)
 
 	rows = 0
@@ -63,7 +68,12 @@ func TestMigration(t *testing.T) {
 func TestMigrationFailDuplicate(t *testing.T) {
 	db, unique := testutil.SetupDatabase()
 
-	err := rove.Migrate("testdata/fail-duplicate.sql", unique, 0, false)
+	// Set up rove.
+	r := rove.New()
+	r.MigrationFile = "testdata/fail-duplicate.sql"
+	r.EnvPrefix = unique
+
+	err := r.Migrate(0)
 	assert.Contains(t, err.Error(), "checksum does not match")
 
 	rows := 0
@@ -77,8 +87,13 @@ func TestMigrationFailDuplicate(t *testing.T) {
 func TestInclude(t *testing.T) {
 	db, unique := testutil.SetupDatabase()
 
+	// Set up rove.
+	r := rove.New()
+	r.MigrationFile = "testdata/parent.sql"
+	r.EnvPrefix = unique
+
 	// Run migration.
-	err := rove.Migrate("testdata/parent.sql", unique, 0, false)
+	err := r.Migrate(0)
 	assert.Nil(t, err)
 
 	// Count the records.
@@ -88,11 +103,11 @@ func TestInclude(t *testing.T) {
 	assert.Equal(t, 3, rows)
 
 	// Run migration again.
-	err = rove.Migrate("testdata/parent.sql", unique, 0, false)
+	err = r.Migrate(0)
 	assert.Nil(t, err)
 
 	// Remove all migrations.
-	err = rove.Reset("testdata/parent.sql", unique, 0, false)
+	err = r.Reset(0)
 	assert.Nil(t, err)
 
 	rows = 0
@@ -101,11 +116,11 @@ func TestInclude(t *testing.T) {
 	assert.Equal(t, 0, rows)
 
 	// Remove all migrations again.
-	err = rove.Reset("testdata/parent.sql", unique, 0, false)
+	err = r.Reset(0)
 	assert.Nil(t, err)
 
 	// Run 2 migrations.
-	err = rove.Migrate("testdata/parent.sql", unique, 2, false)
+	err = r.Migrate(2)
 	assert.Nil(t, err)
 
 	rows = 0
@@ -114,7 +129,7 @@ func TestInclude(t *testing.T) {
 	assert.Equal(t, 2, rows)
 
 	// Remove 1 migration.
-	err = rove.Reset("testdata/parent.sql", unique, 1, false)
+	err = r.Reset(1)
 	assert.Nil(t, err)
 
 	rows = 0

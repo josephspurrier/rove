@@ -93,6 +93,9 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*database.DBW, string) {
 	unique := ""
 	var db *database.DBW
 
+	r := rove.New()
+	r.MigrationFile = file
+
 	if usePrefix {
 		db, unique = SetupDatabase()
 	} else {
@@ -110,7 +113,9 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*database.DBW, string) {
 		db = connectDatabase(true, unique)
 	}
 
-	err := rove.Migrate(file, unique, 0, false)
+	r.EnvPrefix = unique
+
+	err := r.Migrate(0)
 	if err != nil {
 		log.Println("DB Error:", err)
 	}

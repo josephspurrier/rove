@@ -31,3 +31,18 @@ var (
 	// ErrInvalidFormat is when a changeset is not found.
 	ErrInvalidFormat = errors.New("invalid changeset format")
 )
+
+// Rove contains the database migration information.
+type Rove struct {
+	// Verbose is whether information is written to the screen or not.
+	Verbose bool
+	// EnvPrefix is the optional prefix used when reading environment variables.
+	EnvPrefix string
+	// MigrationFile is the full path to the migration file.
+	MigrationFile string
+}
+
+// New returns an instance of Rove.
+func New() *Rove {
+	return &Rove{}
+}

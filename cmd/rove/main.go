@@ -33,28 +33,37 @@ func main() {
 	argList := os.Args[1:]
 	arg := kingpin.MustParse(app.Parse(argList))
 
+	// Create a new instance of rove.
+	r := rove.New()
+	r.EnvPrefix = *cDBPrefix
+	r.Verbose = true
+
 	switch arg {
 	case cDBAll.FullCommand():
-		err := rove.Migrate(*cDBAllFile, *cDBPrefix, 0, true)
+		r.MigrationFile = *cDBAllFile
+		err := r.Migrate(0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	case cDBUp.FullCommand():
-		err := rove.Migrate(*cDBUpFile, *cDBPrefix, *cDBUpCount, true)
+		r.MigrationFile = *cDBUpFile
+		err := r.Migrate(*cDBUpCount)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	case cDBReset.FullCommand():
-		err := rove.Reset(*cDBResetFile, *cDBPrefix, 0, true)
+		r.MigrationFile = *cDBResetFile
+		err := r.Reset(0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 
 	case cDBDown.FullCommand():
-		err := rove.Reset(*cDBDownFile, *cDBPrefix, *cDBDownCount, true)
+		r.MigrationFile = *cDBDownFile
+		err := r.Reset(*cDBDownCount)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

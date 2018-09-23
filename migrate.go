@@ -8,8 +8,8 @@ import (
 
 // Migrate will perform all the migrations in a file. If max is 0, all
 // migrations are run.
-func Migrate(filename string, prefix string, max int, verbose bool) error {
-	db, err := connect(prefix)
+func (r *Rove) Migrate(max int) error {
+	db, err := connect(r.EnvPrefix)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 	}
 
 	// Get the changesets.
-	arr, err := parseFileToArray(filename)
+	arr, err := parseFileToArray(r.MigrationFile)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 					cs.author, cs.id, checksum, newChecksum)
 			}
 
-			if verbose {
+			if r.Verbose {
 				fmt.Printf("Changeset already applied: %v:%v\n", cs.author, cs.id)
 			}
 			continue
@@ -101,7 +101,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 			return err
 		}
 
-		if verbose {
+		if r.Verbose {
 			fmt.Printf("Changeset applied: %v:%v\n", cs.author, cs.id)
 		}
 

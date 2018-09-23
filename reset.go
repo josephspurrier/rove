@@ -15,14 +15,14 @@ type DBChangeset struct {
 }
 
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
-func Reset(filename string, prefix string, max int, verbose bool) (err error) {
-	db, err := connect(prefix)
+func (r *Rove) Reset(max int) (err error) {
+	db, err := connect(r.EnvPrefix)
 	if err != nil {
 		return err
 	}
 
 	// Get the changesets in a map.
-	m, err := parseFileToMap(filename)
+	m, err := parseFileToMap(r.MigrationFile)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func Reset(filename string, prefix string, max int, verbose bool) (err error) {
 	}
 
 	if len(results) == 0 {
-		if verbose {
+		if r.Verbose {
 			fmt.Println("No rollbacks to perform.")
 			return nil
 		}
@@ -47,8 +47,8 @@ func Reset(filename string, prefix string, max int, verbose bool) (err error) {
 	maxCounter := 0
 
 	// Loop through each changeset.
-	for _, r := range results {
-		id := fmt.Sprintf("%v:%v:%v", r.Author, r.ID, r.Filename)
+	for _, rs := range results {
+		id := fmt.Sprintf("%v:%v:%v", rs.Author, rs.ID, rs.Filename)
 
 		cs, ok := m[id]
 		if !ok {
@@ -94,7 +94,7 @@ func Reset(filename string, prefix string, max int, verbose bool) (err error) {
 			return err
 		}
 
-		if verbose {
+		if r.Verbose {
 			fmt.Printf("Rollback applied: %v:%v\n", cs.author, cs.id)
 		}
 
