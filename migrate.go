@@ -6,9 +6,16 @@ import (
 	"strings"
 )
 
+// Migration represents functions to run on a database.
+type Migration interface {
+	Connect(envPrefix string) error
+	CreateChangelogTable() error
+}
+
 // Migrate will perform all the migrations in a file. If max is 0, all
 // migrations are run.
 func (r *Rove) Migrate(max int) error {
+	// Connect to the database.
 	db, err := connect(r.EnvPrefix)
 	if err != nil {
 		return err
