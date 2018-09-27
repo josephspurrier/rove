@@ -10,6 +10,15 @@ This project is based off Liquibase, the database migration tool. It uses a slim
 
 **Note:** Do not run this tool on a database that already has Liquibase migrations applied - they are not compatiable because the way the checksums are calculated is different. The DATABASECHANGELOG database table which is used for storing the changesets is also different.
 
+## Dependencies
+
+```
+gopkg.in/alecthomas/kingpin.v2
+github.com/go-sql-driver/mysql
+github.com/jmoiron/sqlx
+github.com/stretchr/testify/assert
+```
+
 ## Quick Start with Docker Compose
 
 You can build a docker image from this repository and set it up along with a MySQL container using docker compose.

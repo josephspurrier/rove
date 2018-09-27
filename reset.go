@@ -16,23 +16,14 @@ type DBChangeset struct {
 
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
 func (r *Rove) Reset(max int) (err error) {
-	db, err := connect(r.EnvPrefix)
-	if err != nil {
-		return err
-	}
-
 	// Get the changesets in a map.
 	m, err := parseFileToMap(r.MigrationFile)
 	if err != nil {
 		return err
 	}
 
-	// Get each changeset from the database.
-	results := make([]DBChangeset, 0)
-	err = db.Select(&results, `
-		SELECT id, author, filename, orderexecuted
-		FROM databasechangelog
-		ORDER BY orderexecuted DESC;`)
+	// Get an array of changesets from the database.
+	results, err := r.m.Changesets()
 	if err != nil {
 		return err
 	}
@@ -57,7 +48,7 @@ func (r *Rove) Reset(max int) (err error) {
 
 		arrQueries := strings.Split(cs.Rollbacks(), ";")
 
-		tx, err := db.Begin()
+		tx, err := r.m.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
@@ -85,11 +76,7 @@ func (r *Rove) Reset(max int) (err error) {
 		}
 
 		// Delete the record.
-		_, err = db.Exec(`
-			DELETE FROM databasechangelog
-			WHERE id = ? AND author = ? AND filename = ?
-			LIMIT 1
-			`, cs.id, cs.author, cs.filename)
+		err = r.m.Delete(cs.id, cs.author, cs.filename)
 		if err != nil {
 			return err
 		}

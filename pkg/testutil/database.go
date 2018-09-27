@@ -93,12 +93,20 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*database.DBW, string) {
 	unique := ""
 	var db *database.DBW
 
-	r := rove.New()
-	r.MigrationFile = file
+	var r *rove.Rove
 
 	if usePrefix {
 		db, unique = SetupDatabase()
+		// Create a new MySQL database object.
+		m := new(database.MySQL)
+		m.DB = db.Connection()
+		r = rove.New(m)
+		r.MigrationFile = file
 	} else {
+		m := new(database.MySQL)
+		m.DB = db.Connection()
+		r = rove.New(m)
+		r.MigrationFile = file
 		setEnv(unique)
 		db = connectDatabase(false, unique)
 		_, err := db.Exec(`DROP DATABASE IF EXISTS ` + TestDatabaseName)
@@ -112,8 +120,6 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*database.DBW, string) {
 
 		db = connectDatabase(true, unique)
 	}
-
-	r.EnvPrefix = unique
 
 	err := r.Migrate(0)
 	if err != nil {

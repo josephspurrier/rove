@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/josephspurrier/rove"
+	"github.com/josephspurrier/rove/pkg/database"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -33,10 +34,13 @@ func main() {
 	argList := os.Args[1:]
 	arg := kingpin.MustParse(app.Parse(argList))
 
+	// Create a new MySQL database object.
+	m := database.NewMySQL(*cDBPrefix)
+
 	// Create a new instance of rove.
-	r := rove.New()
-	r.EnvPrefix = *cDBPrefix
+	r := rove.New(m)
 	r.Verbose = true
+	r.DatabaseType = "mysql"
 
 	switch arg {
 	case cDBAll.FullCommand():

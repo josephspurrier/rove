@@ -18,6 +18,11 @@ type DBW struct {
 	db *sqlx.DB
 }
 
+// Connection returns the database connection.
+func (d *DBW) Connection() *sqlx.DB {
+	return d.db
+}
+
 // Select using this DB.
 // Any placeholder parameters are replaced with supplied args.
 func (d *DBW) Select(dest interface{}, query string, args ...interface{}) error {

@@ -3,6 +3,8 @@ package rove_test
 import (
 	"testing"
 
+	"github.com/josephspurrier/rove/pkg/database"
+
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/testutil"
 
@@ -12,10 +14,13 @@ import (
 func TestMigration(t *testing.T) {
 	db, unique := testutil.SetupDatabase()
 
+	// Create a new MySQL database object.
+	m := new(database.MySQL)
+	m.DB = db.Connection()
+
 	// Set up rove.
-	r := rove.New()
+	r := rove.New(m)
 	r.MigrationFile = "testdata/success.sql"
-	r.EnvPrefix = unique
 
 	// Run migration.
 	err := r.Migrate(0)
@@ -68,10 +73,13 @@ func TestMigration(t *testing.T) {
 func TestMigrationFailDuplicate(t *testing.T) {
 	db, unique := testutil.SetupDatabase()
 
+	// Create a new MySQL database object.
+	m := new(database.MySQL)
+	m.DB = db.Connection()
+
 	// Set up rove.
-	r := rove.New()
+	r := rove.New(m)
 	r.MigrationFile = "testdata/fail-duplicate.sql"
-	r.EnvPrefix = unique
 
 	err := r.Migrate(0)
 	assert.Contains(t, err.Error(), "checksum does not match")
@@ -87,10 +95,13 @@ func TestMigrationFailDuplicate(t *testing.T) {
 func TestInclude(t *testing.T) {
 	db, unique := testutil.SetupDatabase()
 
+	// Create a new MySQL database object.
+	m := new(database.MySQL)
+	m.DB = db.Connection()
+
 	// Set up rove.
-	r := rove.New()
+	r := rove.New(m)
 	r.MigrationFile = "testdata/parent.sql"
-	r.EnvPrefix = unique
 
 	// Run migration.
 	err := r.Migrate(0)

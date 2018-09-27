@@ -6,23 +6,11 @@ import (
 	"strings"
 )
 
-// Migration represents functions to run on a database.
-type Migration interface {
-	Connect(envPrefix string) error
-	CreateChangelogTable() error
-}
-
 // Migrate will perform all the migrations in a file. If max is 0, all
 // migrations are run.
 func (r *Rove) Migrate(max int) error {
-	// Connect to the database.
-	db, err := connect(r.EnvPrefix)
-	if err != nil {
-		return err
-	}
-
-	// Create the DATABASECHANGELOG.
-	_, err = db.Exec(sqlChangelog)
+	// Create a changelog table.
+	err := r.m.CreateChangelogTable()
 	if err != nil {
 		return err
 	}
@@ -42,11 +30,7 @@ func (r *Rove) Migrate(max int) error {
 
 		// Determine if the changeset was already applied.
 		// Count the number of rows.
-		err = db.Get(&checksum, `SELECT md5sum
-			FROM databasechangelog
-			WHERE id = ?
-			AND author = ?
-			AND filename = ?`, cs.id, cs.author, cs.filename)
+		checksum, err = r.m.ChangesetApplied(cs.id, cs.author, cs.filename)
 		if err == nil {
 			// Determine if the checksums match.
 			if checksum != newChecksum {
@@ -64,7 +48,7 @@ func (r *Rove) Migrate(max int) error {
 
 		arrQueries := strings.Split(cs.Changes(), ";")
 
-		tx, err := db.Begin()
+		tx, err := r.m.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
@@ -92,18 +76,14 @@ func (r *Rove) Migrate(max int) error {
 		}
 
 		// Count the number of rows.
-		count := 0
-		err = db.Get(&count, `SELECT COUNT(*) FROM databasechangelog`)
+		count, err := r.m.Count()
 		if err != nil {
 			return err
 		}
 
 		// Insert the record.
-		_, err = db.Exec(`
-			INSERT INTO databasechangelog
-			(id,author,filename,dateexecuted,orderexecuted,md5sum,description,version)
-			VALUES(?,?,?,NOW(),?,?,?,?)
-			`, cs.id, cs.author, cs.filename, count+1, newChecksum, cs.description, cs.version)
+		err = r.m.Insert(cs.id, cs.author, cs.filename, count+1, newChecksum,
+			cs.description, cs.version)
 		if err != nil {
 			return err
 		}
