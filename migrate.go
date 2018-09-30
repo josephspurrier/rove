@@ -10,15 +10,25 @@ import (
 // migrations are run.
 func (r *Rove) Migrate(max int) error {
 	// Create a changelog table.
-	err := r.m.CreateChangelogTable()
+	err := r.db.CreateChangelogTable()
 	if err != nil {
 		return err
 	}
 
-	// Get the changesets.
-	arr, err := parseFileToArray(r.MigrationFile)
-	if err != nil {
-		return err
+	arr := make([]Changeset, 0)
+	// If a file is specified, use it to build the array.
+	if len(r.file) > 0 {
+		// Get the changesets.
+		arr, err = parseFileToArray(r.file)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Else use the changeset that was passed in.
+		arr, err = parseToArray(strings.NewReader(r.changeset), "memory")
+		if err != nil {
+			return err
+		}
 	}
 
 	maxCounter := 0
@@ -30,7 +40,7 @@ func (r *Rove) Migrate(max int) error {
 
 		// Determine if the changeset was already applied.
 		// Count the number of rows.
-		checksum, err = r.m.ChangesetApplied(cs.id, cs.author, cs.filename)
+		checksum, err = r.db.ChangesetApplied(cs.id, cs.author, cs.filename)
 		if err == nil {
 			// Determine if the checksums match.
 			if checksum != newChecksum {
@@ -48,7 +58,7 @@ func (r *Rove) Migrate(max int) error {
 
 		arrQueries := strings.Split(cs.Changes(), ";")
 
-		tx, err := r.m.BeginTx()
+		tx, err := r.db.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
@@ -76,13 +86,13 @@ func (r *Rove) Migrate(max int) error {
 		}
 
 		// Count the number of rows.
-		count, err := r.m.Count()
+		count, err := r.db.Count()
 		if err != nil {
 			return err
 		}
 
 		// Insert the record.
-		err = r.m.Insert(cs.id, cs.author, cs.filename, count+1, newChecksum,
+		err = r.db.Insert(cs.id, cs.author, cs.filename, count+1, newChecksum,
 			cs.description, cs.version)
 		if err != nil {
 			return err
@@ -94,10 +104,8 @@ func (r *Rove) Migrate(max int) error {
 
 		// Only perform the maxium number of changes based on the max value.
 		maxCounter++
-		if max != 0 {
-			if maxCounter >= max {
-				break
-			}
+		if max != 0 && maxCounter >= max {
+			break
 		}
 	}
 

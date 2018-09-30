@@ -41,22 +41,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Create a new instance of rove.
-	r := rove.New(m)
-	r.Verbose = true
-
 	switch arg {
 	case cDBAll.FullCommand():
-		r.MigrationFile = *cDBAllFile
+		r := rove.NewFileMigration(m, *cDBAllFile)
+		r.Verbose = true
 		err = r.Migrate(0)
 	case cDBUp.FullCommand():
-		r.MigrationFile = *cDBUpFile
+		r := rove.NewFileMigration(m, *cDBUpFile)
+		r.Verbose = true
 		err = r.Migrate(*cDBUpCount)
 	case cDBReset.FullCommand():
-		r.MigrationFile = *cDBResetFile
+		r := rove.NewFileMigration(m, *cDBResetFile)
+		r.Verbose = true
 		err = r.Reset(0)
 	case cDBDown.FullCommand():
-		r.MigrationFile = *cDBDownFile
+		r := rove.NewFileMigration(m, *cDBDownFile)
+		r.Verbose = true
 		err = r.Reset(*cDBDownCount)
 	}
 

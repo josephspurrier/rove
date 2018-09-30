@@ -22,10 +22,13 @@ var (
 type Rove struct {
 	// Verbose is whether information is written to the screen or not.
 	Verbose bool
-	// MigrationFile is the full path to the migration file.
-	MigrationFile string
-	// m is a migration.
-	m Migration
+
+	// file is the full path to the migration file.
+	file string
+	// changeset is text with changesets.
+	changeset string
+	// db is a migration.
+	db Migration
 }
 
 // DBChangeset contains a single database record change.
@@ -36,9 +39,18 @@ type DBChangeset struct {
 	OrderExecuted int
 }
 
-// New returns an instance of Rove.
-func New(m Migration) *Rove {
+// NewFileMigration returns a file migration object.
+func NewFileMigration(db Migration, filename string) *Rove {
 	return &Rove{
-		m: m,
+		db:   db,
+		file: filename,
+	}
+}
+
+// NewChangesetMigration returns a changeset migration object.
+func NewChangesetMigration(db Migration, changeset string) *Rove {
+	return &Rove{
+		db:        db,
+		changeset: changeset,
 	}
 }

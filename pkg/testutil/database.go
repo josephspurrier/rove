@@ -100,13 +100,11 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*sqlx.DB, string) {
 		// Create a new MySQL database object.
 		m := new(database.MySQL)
 		m.DB = db
-		r = rove.New(m)
-		r.MigrationFile = file
+		r = rove.NewFileMigration(m, file)
 	} else {
 		m := new(database.MySQL)
 		m.DB = db
-		r = rove.New(m)
-		r.MigrationFile = file
+		r = rove.NewFileMigration(m, file)
 		setEnv(unique)
 		db = connectDatabase(false, unique)
 		_, err := db.Exec(`DROP DATABASE IF EXISTS ` + TestDatabaseName)

@@ -6,16 +6,39 @@ import (
 	"strings"
 )
 
+// loadChangesets will get the changesets based on the type of migration
+// specified during the creation of the Rove object.
+func (r *Rove) loadChangesets() (map[string]Changeset, error) {
+	// Use the file to get the changesets first.
+	if len(r.file) > 0 {
+		// Get the changesets in a map.
+		m, err := parseFileToMap(r.file)
+		if err != nil {
+			return nil, err
+		}
+
+		return m, nil
+	}
+
+	// Else use the changeset that was passed in.
+	arr, err := parseReaderToMap(strings.NewReader(r.changeset), "memory")
+	if err != nil {
+		return nil, err
+	}
+
+	return arr, nil
+}
+
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
-func (r *Rove) Reset(max int) (err error) {
-	// Get the changesets in a map.
-	m, err := parseFileToMap(r.MigrationFile)
+func (r *Rove) Reset(max int) error {
+	// Get the changesets.
+	m, err := r.loadChangesets()
 	if err != nil {
 		return err
 	}
 
 	// Get an array of changesets from the database.
-	results, err := r.m.Changesets()
+	results, err := r.db.Changesets()
 	if err != nil {
 		return err
 	}
@@ -40,7 +63,7 @@ func (r *Rove) Reset(max int) (err error) {
 
 		arrQueries := strings.Split(cs.Rollbacks(), ";")
 
-		tx, err := r.m.BeginTx()
+		tx, err := r.db.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
@@ -68,7 +91,7 @@ func (r *Rove) Reset(max int) (err error) {
 		}
 
 		// Delete the record.
-		err = r.m.Delete(cs.id, cs.author, cs.filename)
+		err = r.db.Delete(cs.id, cs.author, cs.filename)
 		if err != nil {
 			return err
 		}
@@ -79,12 +102,10 @@ func (r *Rove) Reset(max int) (err error) {
 
 		// Only perform the maxium number of changes based on the max value.
 		maxCounter++
-		if max != 0 {
-			if maxCounter >= max {
-				break
-			}
+		if max != 0 && maxCounter >= max {
+			break
 		}
 	}
 
-	return
+	return nil
 }
