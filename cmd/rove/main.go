@@ -35,31 +35,34 @@ func main() {
 	arg := kingpin.MustParse(app.Parse(argList))
 
 	// Create a new MySQL database object.
-	m := database.NewMySQL(*cDBPrefix)
+	m, err := database.NewMySQL(*cDBPrefix)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	// Create a new instance of rove.
 	r := rove.New(m)
 	r.Verbose = true
-	r.DatabaseType = "mysql"
 
 	switch arg {
 	case cDBAll.FullCommand():
 		r.MigrationFile = *cDBAllFile
-		err := r.Migrate(0)
+		err = r.Migrate(0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	case cDBUp.FullCommand():
 		r.MigrationFile = *cDBUpFile
-		err := r.Migrate(*cDBUpCount)
+		err = r.Migrate(*cDBUpCount)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
 	case cDBReset.FullCommand():
 		r.MigrationFile = *cDBResetFile
-		err := r.Reset(0)
+		err = r.Reset(0)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -67,7 +70,7 @@ func main() {
 
 	case cDBDown.FullCommand():
 		r.MigrationFile = *cDBDownFile
-		err := r.Reset(*cDBDownCount)
+		err = r.Reset(*cDBDownCount)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

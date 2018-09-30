@@ -1,8 +1,6 @@
 package database
 
 import (
-	"database/sql"
-
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/env"
 
@@ -72,8 +70,15 @@ func (m *MySQL) ChangesetApplied(id, author, filename string) (checksum string, 
 }
 
 // BeginTx starts a transaction.
-func (m *MySQL) BeginTx() (*sql.Tx, error) {
-	return m.DB.Begin()
+func (m *MySQL) BeginTx() (rove.Transaction, error) {
+	// Begin a transaction.
+	t, err := m.DB.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	tx := NewTx(t)
+	return tx, nil
 }
 
 // Count returns the number of changesets in the database.

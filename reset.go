@@ -6,14 +6,6 @@ import (
 	"strings"
 )
 
-// DBChangeset represents the database table records.
-type DBChangeset struct {
-	ID            string `db:"id"`
-	Author        string `db:"author"`
-	Filename      string `db:"filename"`
-	OrderExecuted int    `db:"orderexecuted"`
-}
-
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
 func (r *Rove) Reset(max int) (err error) {
 	// Get the changesets in a map.
@@ -60,7 +52,7 @@ func (r *Rove) Reset(max int) (err error) {
 			}
 
 			// Execute the query.
-			_, err = tx.Exec(q)
+			err = tx.Exec(q)
 			if err != nil {
 				return fmt.Errorf("sql error on rollback %v:%v - %v", cs.author, cs.id, err.Error())
 			}

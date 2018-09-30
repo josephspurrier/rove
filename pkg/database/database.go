@@ -46,25 +46,3 @@ func (d *DBW) Exec(query string, args ...interface{}) (sql.Result, error) {
 func (d *DBW) QueryRowScan(dest interface{}, query string, args ...interface{}) error {
 	return d.db.QueryRow(query, args...).Scan(dest)
 }
-
-/*
-// PaginatedResults returns the paginated results of a query.
-func (d *DBW) PaginatedResults(i interface{}, fn func() (interface{}, int,
-	error)) (int, error) {
-	v := reflect.ValueOf(i)
-	if v.Kind() != reflect.Ptr {
-		return 0, errors.New("must pass a pointer, not a value")
-	}
-
-	results, d2, d3 := fn()
-	if results == nil {
-		return d2, d3
-	}
-
-	arrPtr := reflect.ValueOf(i)
-	value := arrPtr.Elem()
-	itemPtr := reflect.ValueOf(results)
-	value.Set(itemPtr)
-
-	return d2, d3
-}*/

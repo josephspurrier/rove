@@ -3,9 +3,8 @@ package rove_test
 import (
 	"testing"
 
-	"github.com/josephspurrier/rove/pkg/database"
-
 	"github.com/josephspurrier/rove"
+	"github.com/josephspurrier/rove/pkg/database"
 	"github.com/josephspurrier/rove/pkg/testutil"
 
 	"github.com/stretchr/testify/assert"

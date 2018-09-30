@@ -60,7 +60,7 @@ func (r *Rove) Migrate(max int) error {
 			}
 
 			// Execute the query.
-			_, err = tx.Exec(q)
+			err = tx.Exec(q)
 			if err != nil {
 				return fmt.Errorf("sql error on changeset %v:%v - %v", cs.author, cs.id, err.Error())
 			}
