@@ -15,7 +15,7 @@ func TestMigration(t *testing.T) {
 
 	// Create a new MySQL database object.
 	m := new(database.MySQL)
-	m.DB = db.Connection()
+	m.DB = db
 
 	// Set up rove.
 	r := rove.New(m)
@@ -74,7 +74,7 @@ func TestMigrationFailDuplicate(t *testing.T) {
 
 	// Create a new MySQL database object.
 	m := new(database.MySQL)
-	m.DB = db.Connection()
+	m.DB = db
 
 	// Set up rove.
 	r := rove.New(m)
@@ -96,7 +96,7 @@ func TestInclude(t *testing.T) {
 
 	// Create a new MySQL database object.
 	m := new(database.MySQL)
-	m.DB = db.Connection()
+	m.DB = db
 
 	// Set up rove.
 	r := rove.New(m)

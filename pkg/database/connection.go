@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/go-sql-driver/mysql" // MySQL driver.
 	"github.com/jmoiron/sqlx"
 )
 
@@ -20,41 +20,11 @@ type Connection struct {
 	Parameter string `json:"Parameter" env:"DB_PARAMETER"`
 }
 
-// *****************************************************************************
-// Database Handling
-// *****************************************************************************
-
 // Connect to the database.
 func (c Connection) Connect(specificDatabase bool) (*sqlx.DB, error) {
 	// Connect to database and ping
 	return sqlx.Connect("mysql", c.dsn(specificDatabase))
 }
-
-// Create a new database.
-func (c Connection) Create(sql *sqlx.DB) error {
-	// Set defaults
-	ci := c.setDefaults()
-
-	// Create the database
-	_, err := sql.Exec(fmt.Sprintf(`CREATE DATABASE %v
-				DEFAULT CHARSET = %v
-				COLLATE = %v
-				;`, ci.Database,
-		ci.Charset,
-		ci.Collation))
-	return err
-}
-
-// Drop a database.
-func (c Connection) Drop(sql *sqlx.DB) error {
-	// Drop the database
-	_, err := sql.Exec(fmt.Sprintf(`DROP DATABASE %v;`, c.Database))
-	return err
-}
-
-// *****************************************************************************
-// MySQL Specific
-// *****************************************************************************
 
 // DSN returns the Data Source Name.
 func (c Connection) dsn(includeDatabase bool) string {
@@ -89,10 +59,12 @@ func (c Connection) dsn(includeDatabase bool) string {
 	}
 
 	// Example: root:password@tcp(localhost:3306)/test
-	s := fmt.Sprintf("%v:%v@tcp(%v:%d)/%v", ci.Username, ci.Password, ci.Hostname, ci.Port, param)
+	s := fmt.Sprintf("%v:%v@tcp(%v:%d)/%v", ci.Username, ci.Password,
+		ci.Hostname, ci.Port, param)
 
 	if includeDatabase {
-		s = fmt.Sprintf("%v:%v@tcp(%v:%d)/%v%v", ci.Username, ci.Password, ci.Hostname, ci.Port, ci.Database, param)
+		s = fmt.Sprintf("%v:%v@tcp(%v:%d)/%v%v", ci.Username, ci.Password,
+			ci.Hostname, ci.Port, ci.Database, param)
 	}
 
 	return s

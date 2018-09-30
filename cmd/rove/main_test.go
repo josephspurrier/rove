@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/josephspurrier/rove/pkg/database"
+	"github.com/jmoiron/sqlx"
 	"github.com/josephspurrier/rove/pkg/testutil"
 
 	"github.com/stretchr/testify/assert"
@@ -16,7 +16,7 @@ func TestMigrationAll(t *testing.T) {
 	testutil.TeardownDatabase(unique)
 }
 
-func migrateAll(t *testing.T) (*database.DBW, string) {
+func migrateAll(t *testing.T) (*sqlx.DB, string) {
 	db, unique := testutil.SetupDatabase()
 
 	// Set the arguments.
@@ -95,7 +95,7 @@ func TestMigrationUp(t *testing.T) {
 	testutil.TeardownDatabase(unique)
 }
 
-func migrateUp(t *testing.T) (*database.DBW, string) {
+func migrateUp(t *testing.T) (*sqlx.DB, string) {
 	db, unique := testutil.SetupDatabase()
 
 	// Set the arguments.

@@ -18,8 +18,16 @@ const (
 	description varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
 	tag varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
 	version varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 )
+
+// dbchangeset contains a single database record change.
+type dbchangeset struct {
+	ID            string `db:"id"`
+	Author        string `db:"author"`
+	Filename      string `db:"filename"`
+	OrderExecuted int    `db:"orderexecuted"`
+}
 
 // MySQL is a MySQL database connection.
 type MySQL struct {
@@ -96,28 +104,33 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 	_, err := m.DB.Exec(`
 	INSERT INTO databasechangelog
 	(id,author,filename,dateexecuted,orderexecuted,md5sum,description,version)
-	VALUES(?,?,?,NOW(),?,?,?,?)
-	`, id, author, filename, count, checksum, description, version)
+	VALUES(?,?,?,NOW(),?,?,?,?)`,
+		id, author, filename, count, checksum, description, version)
 	return err
 }
 
 // Changesets returns a list of the changesets from the database.
 func (m *MySQL) Changesets() ([]rove.DBChangeset, error) {
-	results := make([]rove.DBChangeset, 0)
+	results := make([]dbchangeset, 0)
 	err := m.DB.Select(&results, `
-		SELECT id, author, filename, orderexecuted
-		FROM databasechangelog
-		ORDER BY orderexecuted DESC;`)
-	return results, err
+	SELECT id, author, filename, orderexecuted
+	FROM databasechangelog
+	ORDER BY orderexecuted DESC`)
+
+	// Copy from one struct to another.
+	out := make([]rove.DBChangeset, 0)
+	for _, i := range results {
+		out = append(out, rove.DBChangeset(i))
+	}
+
+	return out, err
 }
 
 // Delete will delete a changeset from the database.
 func (m *MySQL) Delete(id, author, filename string) error {
 	// Delete the record.
 	_, err := m.DB.Exec(`
-			DELETE FROM databasechangelog
-			WHERE id = ? AND author = ? AND filename = ?
-			LIMIT 1
-			`, id, author, filename)
+	DELETE FROM databasechangelog
+	WHERE id = ? AND author = ? AND filename = ? LIMIT 1`, id, author, filename)
 	return err
 }

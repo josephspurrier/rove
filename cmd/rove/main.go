@@ -49,31 +49,20 @@ func main() {
 	case cDBAll.FullCommand():
 		r.MigrationFile = *cDBAllFile
 		err = r.Migrate(0)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 	case cDBUp.FullCommand():
 		r.MigrationFile = *cDBUpFile
 		err = r.Migrate(*cDBUpCount)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
 	case cDBReset.FullCommand():
 		r.MigrationFile = *cDBResetFile
 		err = r.Reset(0)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
 	case cDBDown.FullCommand():
 		r.MigrationFile = *cDBDownFile
 		err = r.Reset(*cDBDownCount)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+	}
+
+	// If there is an error, return with an error code of 1.
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
