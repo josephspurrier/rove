@@ -9,6 +9,7 @@ const (
 	elementChangeset = "--changeset "
 	elementRollback  = "--rollback "
 	elementInclude   = "--include "
+	elementMemory    = "memory"
 )
 
 var (

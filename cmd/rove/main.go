@@ -28,6 +28,8 @@ var (
 	cDBDown      = cDB.Command("down", "Apply a specific number of rollbacks to the database.")
 	cDBDownCount = cDBDown.Arg("count", "Number of rollbacks [int].").Required().Int()
 	cDBDownFile  = cDBDown.Arg("file", "Filename of the migration file [string].").Required().String()
+
+	cDBStatus = cDB.Command("status", "Output the list of migrations already applied to the database.")
 )
 
 func main() {
@@ -35,7 +37,13 @@ func main() {
 	arg := kingpin.MustParse(app.Parse(argList))
 
 	// Create a new MySQL database object.
-	m, err := database.NewMySQL(*cDBPrefix)
+	conn, err := database.NewConnection(*cDBPrefix)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	m, err := database.NewMySQL(conn)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -58,6 +66,10 @@ func main() {
 		r := rove.NewFileMigration(m, *cDBDownFile)
 		r.Verbose = true
 		err = r.Reset(*cDBDownCount)
+	case cDBStatus.FullCommand():
+		r := rove.NewFileMigration(m, *cDBDownFile)
+		r.Verbose = true
+		_, err = r.Status()
 	}
 
 	// If there is an error, return with an error code of 1.

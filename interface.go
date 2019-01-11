@@ -18,7 +18,7 @@ type Migration interface {
 	Insert(id, author, filename string, count int, checksum, description, version string) error
 	// Returns a list of the changesets or it returns an error if there is an
 	// problem running the query.
-	Changesets() ([]DBChangeset, error)
+	Changesets(reverse bool) ([]DBChangeset, error)
 	// Delete the changeset from the database or return an error if there is a
 	// problem running the query.
 	Delete(id, author, filename string) error

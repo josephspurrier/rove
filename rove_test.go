@@ -65,6 +65,11 @@ func TestFileMigration(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, rows)
 
+	// Show status of the migrations.
+	s, err := r.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, "josephspurrier:1", s)
+
 	testutil.TeardownDatabase(unique)
 }
 

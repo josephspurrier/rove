@@ -2,7 +2,6 @@ package database
 
 import (
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/env"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -34,26 +33,13 @@ type MySQL struct {
 	DB *sqlx.DB
 }
 
-// NewMySQL connects to the database.
-// prefix is the optional prefix used when reading environment variables.
-func NewMySQL(prefix string) (m *MySQL, err error) {
-	m = new(MySQL)
+// NewMySQL connects to the database and returns an object that satisfies the
+// rove.Migration interface.
+func NewMySQL(c *Connection) (m *MySQL, err error) {
 	// Connect to the database.
-	m.DB, err = connect(prefix)
+	m = new(MySQL)
+	m.DB, err = c.Connect(true)
 	return m, err
-}
-
-// connect will connect to the database.
-func connect(prefix string) (*sqlx.DB, error) {
-	dbc := new(Connection)
-
-	// Load the struct from environment variables.
-	err := env.Unmarshal(dbc, prefix)
-	if err != nil {
-		return nil, err
-	}
-
-	return dbc.Connect(true)
 }
 
 // CreateChangelogTable will create the changelog table and return an error.
@@ -109,13 +95,19 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 	return err
 }
 
-// Changesets returns a list of the changesets from the database.
-func (m *MySQL) Changesets() ([]rove.DBChangeset, error) {
+// Changesets returns a list of the changesets from the database in ascending
+// order (false) or descending order (true).
+func (m *MySQL) Changesets(reverse bool) ([]rove.DBChangeset, error) {
+	order := "ASC"
+	if reverse {
+		order = "DESC"
+	}
+
 	results := make([]dbchangeset, 0)
 	err := m.DB.Select(&results, `
 	SELECT id, author, filename, orderexecuted
 	FROM databasechangelog
-	ORDER BY orderexecuted DESC`)
+	ORDER BY orderexecuted `+order)
 
 	// Copy from one struct to another.
 	out := make([]rove.DBChangeset, 0)

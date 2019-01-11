@@ -25,7 +25,7 @@ func (r *Rove) Migrate(max int) error {
 		}
 	} else {
 		// Else use the changeset that was passed in.
-		arr, err = parseToArray(strings.NewReader(r.changeset), "memory")
+		arr, err = parseToArray(strings.NewReader(r.changeset), elementMemory)
 		if err != nil {
 			return err
 		}

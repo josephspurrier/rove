@@ -21,7 +21,7 @@ func (r *Rove) loadChangesets() (map[string]Changeset, error) {
 	}
 
 	// Else use the changeset that was passed in.
-	arr, err := parseReaderToMap(strings.NewReader(r.changeset), "memory")
+	arr, err := parseReaderToMap(strings.NewReader(r.changeset), elementMemory)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (r *Rove) Reset(max int) error {
 	}
 
 	// Get an array of changesets from the database.
-	results, err := r.db.Changesets()
+	results, err := r.db.Changesets(true)
 	if err != nil {
 		return err
 	}
@@ -46,8 +46,8 @@ func (r *Rove) Reset(max int) error {
 	if len(results) == 0 {
 		if r.Verbose {
 			fmt.Println("No rollbacks to perform.")
-			return nil
 		}
+		return nil
 	}
 
 	maxCounter := 0
