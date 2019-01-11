@@ -20,13 +20,13 @@ func migrateAll(t *testing.T) (*sqlx.DB, string) {
 	db, unique := testutil.SetupDatabase()
 
 	// Set the arguments.
-	os.Args = make([]string, 6)
-	os.Args[0] = "rove"
-	os.Args[1] = "migrate"
-	os.Args[2] = "all"
-	os.Args[3] = "testdata/success.sql"
-	os.Args[4] = "--envprefix"
-	os.Args[5] = unique
+	os.Args = []string{
+		"rove",
+		"all",
+		"testdata/success.sql",
+		"--envprefix",
+		unique,
+	}
 
 	// Redirect stdout.
 	backupd := os.Stdout
@@ -57,13 +57,13 @@ func TestMigrationReset(t *testing.T) {
 	db, unique := migrateAll(t)
 
 	// Set the arguments.
-	os.Args = make([]string, 6)
-	os.Args[0] = "rove"
-	os.Args[1] = "migrate"
-	os.Args[2] = "reset"
-	os.Args[3] = "testdata/success.sql"
-	os.Args[4] = "--envprefix"
-	os.Args[5] = unique
+	os.Args = []string{
+		"rove",
+		"reset",
+		"testdata/success.sql",
+		"--envprefix",
+		unique,
+	}
 
 	// Redirect stdout.
 	backupd := os.Stdout
@@ -99,14 +99,14 @@ func migrateUp(t *testing.T) (*sqlx.DB, string) {
 	db, unique := testutil.SetupDatabase()
 
 	// Set the arguments.
-	os.Args = make([]string, 7)
-	os.Args[0] = "rove"
-	os.Args[1] = "migrate"
-	os.Args[2] = "up"
-	os.Args[3] = "2"
-	os.Args[4] = "testdata/success.sql"
-	os.Args[5] = "--envprefix"
-	os.Args[6] = unique
+	os.Args = []string{
+		"rove",
+		"up",
+		"2",
+		"testdata/success.sql",
+		"--envprefix",
+		unique,
+	}
 
 	// Redirect stdout.
 	backupd := os.Stdout
@@ -137,14 +137,14 @@ func TestMigrationDown(t *testing.T) {
 	db, unique := migrateUp(t)
 
 	// Set the arguments.
-	os.Args = make([]string, 7)
-	os.Args[0] = "rove"
-	os.Args[1] = "migrate"
-	os.Args[2] = "down"
-	os.Args[3] = "1"
-	os.Args[4] = "testdata/success.sql"
-	os.Args[5] = "--envprefix"
-	os.Args[6] = unique
+	os.Args = []string{
+		"rove",
+		"down",
+		"1",
+		"testdata/success.sql",
+		"--envprefix",
+		unique,
+	}
 
 	// Redirect stdout.
 	backupd := os.Stdout

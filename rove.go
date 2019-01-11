@@ -27,11 +27,11 @@ type Rove struct {
 	// changeset is text with changesets.
 	changeset string
 	// db is a migration.
-	db Migration
+	db Changelog
 }
 
 // NewFileMigration returns a file migration object.
-func NewFileMigration(db Migration, filename string) *Rove {
+func NewFileMigration(db Changelog, filename string) *Rove {
 	return &Rove{
 		db:   db,
 		file: filename,
@@ -39,7 +39,7 @@ func NewFileMigration(db Migration, filename string) *Rove {
 }
 
 // NewChangesetMigration returns a changeset migration object.
-func NewChangesetMigration(db Migration, changeset string) *Rove {
+func NewChangesetMigration(db Changelog, changeset string) *Rove {
 	return &Rove{
 		db:        db,
 		changeset: changeset,

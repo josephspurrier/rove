@@ -14,7 +14,7 @@ import (
 )
 
 // parseFileToArray will parse a file into changesets.
-func parseFileToArray(filename string) ([]changeset.Info, error) {
+func parseFileToArray(filename string) ([]changeset.Record, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -25,12 +25,12 @@ func parseFileToArray(filename string) ([]changeset.Info, error) {
 }
 
 // parseToArray will split the SQL migration into an ordered array.
-func parseToArray(r io.Reader, filename string) ([]changeset.Info, error) {
+func parseToArray(r io.Reader, filename string) ([]changeset.Record, error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 
 	// Array of changesets.
-	arr := make([]changeset.Info, 0)
+	arr := make([]changeset.Record, 0)
 
 	for scanner.Scan() {
 		// Get the line without leading or trailing spaces.
@@ -57,7 +57,7 @@ func parseToArray(r io.Reader, filename string) ([]changeset.Info, error) {
 		// Start recording the changeset.
 		if strings.HasPrefix(line, elementChangeset) {
 			// Create a new changeset.
-			cs := new(changeset.Info)
+			cs := new(changeset.Record)
 			cs.ParseHeader(strings.TrimPrefix(line, elementChangeset))
 			cs.SetFileInfo(path.Base(filename), "sql", appVersion)
 			arr = append(arr, *cs)
@@ -88,7 +88,7 @@ func parseToArray(r io.Reader, filename string) ([]changeset.Info, error) {
 }
 
 // parseFileToMap will parse a file into a map.
-func parseFileToMap(filename string) (map[string]changeset.Info, error) {
+func parseFileToMap(filename string) (map[string]changeset.Record, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func parseFileToMap(filename string) (map[string]changeset.Info, error) {
 }
 
 // parseReaderToMap will parse a reader to a map.
-func parseReaderToMap(r io.Reader, filename string) (map[string]changeset.Info, error) {
+func parseReaderToMap(r io.Reader, filename string) (map[string]changeset.Record, error) {
 	arr, err := parseToArray(r, filename)
 	if err != nil {
 		return nil, err
@@ -108,8 +108,8 @@ func parseReaderToMap(r io.Reader, filename string) (map[string]changeset.Info, 
 	return parseArrayToMap(arr)
 }
 
-func parseArrayToMap(arr []changeset.Info) (map[string]changeset.Info, error) {
-	m := make(map[string]changeset.Info)
+func parseArrayToMap(arr []changeset.Record) (map[string]changeset.Record, error) {
+	m := make(map[string]changeset.Record)
 
 	for _, cs := range arr {
 		id := fmt.Sprintf("%v:%v:%v", cs.Author, cs.ID, cs.Filename)
@@ -125,7 +125,7 @@ func parseArrayToMap(arr []changeset.Info) (map[string]changeset.Info, error) {
 
 // loadChangesets will get the changesets based on the type of migration
 // specified during the creation of the Rove object.
-func (r *Rove) loadChangesets() (map[string]changeset.Info, error) {
+func (r *Rove) loadChangesets() (map[string]changeset.Record, error) {
 	// Use the file to get the changesets first.
 	if len(r.file) > 0 {
 		// Get the changesets in a map.

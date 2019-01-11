@@ -1,7 +1,6 @@
 package rove
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -11,13 +10,13 @@ import (
 // Migrate will perform all the migrations in a file. If max is 0, all
 // migrations are run.
 func (r *Rove) Migrate(max int) error {
-	// Create a changelog table.
-	err := r.db.CreateChangelogTable()
+	// Create the object to store the changeset log.
+	err := r.db.Initialize()
 	if err != nil {
 		return err
 	}
 
-	arr := make([]changeset.Info, 0)
+	arr := make([]changeset.Record, 0)
 	// If a file is specified, use it to build the array.
 	if len(r.file) > 0 {
 		// Get the changesets.
@@ -43,7 +42,9 @@ func (r *Rove) Migrate(max int) error {
 		// Determine if the changeset was already applied.
 		// Count the number of rows.
 		checksum, err = r.db.ChangesetApplied(cs.ID, cs.Author, cs.Filename)
-		if err == nil {
+		if err != nil {
+			return fmt.Errorf("internal error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
+		} else if checksum != "" {
 			// Determine if the checksums match.
 			if checksum != newChecksum {
 				return fmt.Errorf("checksum does not match - existing changeset %v:%v has checksum %v, but new changeset has checksum %v",
@@ -54,8 +55,6 @@ func (r *Rove) Migrate(max int) error {
 				fmt.Printf("Changeset already applied: %v:%v\n", cs.Author, cs.ID)
 			}
 			continue
-		} else if err != nil && err != sql.ErrNoRows {
-			return fmt.Errorf("internal error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		arrQueries := strings.Split(cs.Changes(), ";")

@@ -1,3 +1,4 @@
+// Package changeset handles operations on the text of a changeset.
 package changeset
 
 import (
@@ -10,8 +11,8 @@ var (
 	ErrInvalidHeader = errors.New("invalid changeset header")
 )
 
-// Info is a database changeset.
-type Info struct {
+// Record is a changeset.
+type Record struct {
 	ID          string
 	Author      string
 	Filename    string
@@ -24,7 +25,7 @@ type Info struct {
 }
 
 // ParseHeader will parse the header information.
-func (cs *Info) ParseHeader(line string) error {
+func (cs *Record) ParseHeader(line string) error {
 	arr := strings.Split(line, ":")
 	if len(arr) != 2 {
 		return ErrInvalidHeader
@@ -37,14 +38,14 @@ func (cs *Info) ParseHeader(line string) error {
 }
 
 // SetFileInfo will set the file information.
-func (cs *Info) SetFileInfo(filename string, description string, version string) {
+func (cs *Record) SetFileInfo(filename string, description string, version string) {
 	cs.Filename = filename
 	cs.Description = description
 	cs.Version = version
 }
 
 // AddRollback will add a rollback command.
-func (cs *Info) AddRollback(line string) {
+func (cs *Record) AddRollback(line string) {
 	if len(cs.rollback) == 0 {
 		cs.rollback = make([]string, 0)
 	}
@@ -52,7 +53,7 @@ func (cs *Info) AddRollback(line string) {
 }
 
 // AddChange will add a change command.
-func (cs *Info) AddChange(line string) {
+func (cs *Record) AddChange(line string) {
 	if len(cs.change) == 0 {
 		cs.change = make([]string, 0)
 	}
@@ -60,16 +61,16 @@ func (cs *Info) AddChange(line string) {
 }
 
 // Changes will return all the changes.
-func (cs *Info) Changes() string {
+func (cs *Record) Changes() string {
 	return strings.Join(cs.change, "\n")
 }
 
 // Rollbacks will return all the rollbacks.
-func (cs *Info) Rollbacks() string {
+func (cs *Record) Rollbacks() string {
 	return strings.Join(cs.rollback, "\n")
 }
 
 // Checksum returns an MD5 checksum for the changeset.
-func (cs *Info) Checksum() string {
+func (cs *Record) Checksum() string {
 	return md5sum(cs.Changes())
 }

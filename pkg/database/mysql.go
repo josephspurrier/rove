@@ -1,6 +1,9 @@
+// Package database is a MySQL changelog adapter.
 package database
 
 import (
+	"database/sql"
+
 	"github.com/josephspurrier/rove"
 
 	"github.com/jmoiron/sqlx"
@@ -30,7 +33,8 @@ type dbchangeset struct {
 
 // MySQL is a MySQL database connection.
 type MySQL struct {
-	DB *sqlx.DB
+	DB        *sqlx.DB
+	tablename string
 }
 
 // NewMySQL connects to the database and returns an object that satisfies the
@@ -42,9 +46,9 @@ func NewMySQL(c *Connection) (m *MySQL, err error) {
 	return m, err
 }
 
-// CreateChangelogTable will create the changelog table and return an error.
-func (m *MySQL) CreateChangelogTable() (err error) {
-	// Create the DATABASECHANGELOG.
+// Initialize will create the changelog table or return an error.
+func (m *MySQL) Initialize() (err error) {
+	// Create the table.
 	_, err = m.DB.Exec(sqlChangelog)
 	if err != nil {
 		return err
@@ -53,13 +57,19 @@ func (m *MySQL) CreateChangelogTable() (err error) {
 	return nil
 }
 
-// ChangesetApplied will return the checksum and the error if it's found.
+// ChangesetApplied returns the checksum from the database if it's found, an
+// error if there was an issue, or a blank checksum with no error if it's not
+// found.
 func (m *MySQL) ChangesetApplied(id, author, filename string) (checksum string, err error) {
 	err = m.DB.Get(&checksum, `SELECT md5sum
 	FROM databasechangelog
 	WHERE id = ?
 	AND author = ?
 	AND filename = ?`, id, author, filename)
+
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
 	return checksum, err
 }
 
@@ -97,7 +107,7 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 
 // Changesets returns a list of the changesets from the database in ascending
 // order (false) or descending order (true).
-func (m *MySQL) Changesets(reverse bool) ([]rove.Change, error) {
+func (m *MySQL) Changesets(reverse bool) ([]rove.Changeset, error) {
 	order := "ASC"
 	if reverse {
 		order = "DESC"
@@ -110,9 +120,14 @@ func (m *MySQL) Changesets(reverse bool) ([]rove.Change, error) {
 	ORDER BY orderexecuted `+order)
 
 	// Copy from one struct to another.
-	out := make([]rove.Change, 0)
+	out := make([]rove.Changeset, 0)
 	for _, i := range results {
-		out = append(out, rove.Change(i))
+		out = append(out, rove.Changeset{
+			Author:        i.Author,
+			Filename:      i.Filename,
+			ID:            i.ID,
+			OrderExecuted: i.OrderExecuted,
+		})
 	}
 
 	return out, err
