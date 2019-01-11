@@ -9,10 +9,12 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/josephspurrier/rove/pkg/changeset"
 )
 
 // parseFileToArray will parse a file into changesets.
-func parseFileToArray(filename string) ([]Changeset, error) {
+func parseFileToArray(filename string) ([]changeset.Info, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -23,12 +25,12 @@ func parseFileToArray(filename string) ([]Changeset, error) {
 }
 
 // parseToArray will split the SQL migration into an ordered array.
-func parseToArray(r io.Reader, filename string) ([]Changeset, error) {
+func parseToArray(r io.Reader, filename string) ([]changeset.Info, error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 
 	// Array of changesets.
-	arr := make([]Changeset, 0)
+	arr := make([]changeset.Info, 0)
 
 	for scanner.Scan() {
 		// Get the line without leading or trailing spaces.
@@ -55,7 +57,7 @@ func parseToArray(r io.Reader, filename string) ([]Changeset, error) {
 		// Start recording the changeset.
 		if strings.HasPrefix(line, elementChangeset) {
 			// Create a new changeset.
-			cs := new(Changeset)
+			cs := new(changeset.Info)
 			cs.ParseHeader(strings.TrimPrefix(line, elementChangeset))
 			cs.SetFileInfo(path.Base(filename), "sql", appVersion)
 			arr = append(arr, *cs)
@@ -86,7 +88,7 @@ func parseToArray(r io.Reader, filename string) ([]Changeset, error) {
 }
 
 // parseFileToMap will parse a file into a map.
-func parseFileToMap(filename string) (map[string]Changeset, error) {
+func parseFileToMap(filename string) (map[string]changeset.Info, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -97,7 +99,7 @@ func parseFileToMap(filename string) (map[string]Changeset, error) {
 }
 
 // parseReaderToMap will parse a reader to a map.
-func parseReaderToMap(r io.Reader, filename string) (map[string]Changeset, error) {
+func parseReaderToMap(r io.Reader, filename string) (map[string]changeset.Info, error) {
 	arr, err := parseToArray(r, filename)
 	if err != nil {
 		return nil, err
@@ -106,11 +108,11 @@ func parseReaderToMap(r io.Reader, filename string) (map[string]Changeset, error
 	return parseArrayToMap(arr)
 }
 
-func parseArrayToMap(arr []Changeset) (map[string]Changeset, error) {
-	m := make(map[string]Changeset)
+func parseArrayToMap(arr []changeset.Info) (map[string]changeset.Info, error) {
+	m := make(map[string]changeset.Info)
 
 	for _, cs := range arr {
-		id := fmt.Sprintf("%v:%v:%v", cs.author, cs.id, cs.filename)
+		id := fmt.Sprintf("%v:%v:%v", cs.Author, cs.ID, cs.Filename)
 		if _, found := m[id]; found {
 			return nil, errors.New("Duplicate entry found: " + id)
 		}
@@ -119,4 +121,27 @@ func parseArrayToMap(arr []Changeset) (map[string]Changeset, error) {
 	}
 
 	return m, nil
+}
+
+// loadChangesets will get the changesets based on the type of migration
+// specified during the creation of the Rove object.
+func (r *Rove) loadChangesets() (map[string]changeset.Info, error) {
+	// Use the file to get the changesets first.
+	if len(r.file) > 0 {
+		// Get the changesets in a map.
+		m, err := parseFileToMap(r.file)
+		if err != nil {
+			return nil, err
+		}
+
+		return m, nil
+	}
+
+	// Else use the changeset that was passed in.
+	arr, err := parseReaderToMap(strings.NewReader(r.changeset), elementMemory)
+	if err != nil {
+		return nil, err
+	}
+
+	return arr, nil
 }

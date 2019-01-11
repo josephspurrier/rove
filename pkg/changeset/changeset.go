@@ -1,44 +1,50 @@
-package rove
+package changeset
 
 import (
+	"errors"
 	"strings"
 )
 
-// Changeset is a SQL changeset.
-type Changeset struct {
-	id          string
-	author      string
-	filename    string
-	md5         string
-	description string
-	version     string
+var (
+	// ErrInvalidHeader is when the changeset header is invalid.
+	ErrInvalidHeader = errors.New("invalid changeset header")
+)
+
+// Info is a database changeset.
+type Info struct {
+	ID          string
+	Author      string
+	Filename    string
+	MD5         string
+	Description string
+	Version     string
 
 	change   []string
 	rollback []string
 }
 
 // ParseHeader will parse the header information.
-func (cs *Changeset) ParseHeader(line string) error {
+func (cs *Info) ParseHeader(line string) error {
 	arr := strings.Split(line, ":")
 	if len(arr) != 2 {
 		return ErrInvalidHeader
 	}
 
-	cs.author = arr[0]
-	cs.id = arr[1]
+	cs.Author = arr[0]
+	cs.ID = arr[1]
 
 	return nil
 }
 
 // SetFileInfo will set the file information.
-func (cs *Changeset) SetFileInfo(filename string, description string, version string) {
-	cs.filename = filename
-	cs.description = description
-	cs.version = version
+func (cs *Info) SetFileInfo(filename string, description string, version string) {
+	cs.Filename = filename
+	cs.Description = description
+	cs.Version = version
 }
 
 // AddRollback will add a rollback command.
-func (cs *Changeset) AddRollback(line string) {
+func (cs *Info) AddRollback(line string) {
 	if len(cs.rollback) == 0 {
 		cs.rollback = make([]string, 0)
 	}
@@ -46,7 +52,7 @@ func (cs *Changeset) AddRollback(line string) {
 }
 
 // AddChange will add a change command.
-func (cs *Changeset) AddChange(line string) {
+func (cs *Info) AddChange(line string) {
 	if len(cs.change) == 0 {
 		cs.change = make([]string, 0)
 	}
@@ -54,16 +60,16 @@ func (cs *Changeset) AddChange(line string) {
 }
 
 // Changes will return all the changes.
-func (cs *Changeset) Changes() string {
+func (cs *Info) Changes() string {
 	return strings.Join(cs.change, "\n")
 }
 
 // Rollbacks will return all the rollbacks.
-func (cs *Changeset) Rollbacks() string {
+func (cs *Info) Rollbacks() string {
 	return strings.Join(cs.rollback, "\n")
 }
 
 // Checksum returns an MD5 checksum for the changeset.
-func (cs *Changeset) Checksum() string {
+func (cs *Info) Checksum() string {
 	return md5sum(cs.Changes())
 }

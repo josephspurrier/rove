@@ -97,7 +97,7 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 
 // Changesets returns a list of the changesets from the database in ascending
 // order (false) or descending order (true).
-func (m *MySQL) Changesets(reverse bool) ([]rove.DBChangeset, error) {
+func (m *MySQL) Changesets(reverse bool) ([]rove.Change, error) {
 	order := "ASC"
 	if reverse {
 		order = "DESC"
@@ -110,9 +110,9 @@ func (m *MySQL) Changesets(reverse bool) ([]rove.DBChangeset, error) {
 	ORDER BY orderexecuted `+order)
 
 	// Copy from one struct to another.
-	out := make([]rove.DBChangeset, 0)
+	out := make([]rove.Change, 0)
 	for _, i := range results {
-		out = append(out, rove.DBChangeset(i))
+		out = append(out, rove.Change(i))
 	}
 
 	return out, err

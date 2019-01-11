@@ -18,10 +18,18 @@ type Migration interface {
 	Insert(id, author, filename string, count int, checksum, description, version string) error
 	// Returns a list of the changesets or it returns an error if there is an
 	// problem running the query.
-	Changesets(reverse bool) ([]DBChangeset, error)
+	Changesets(reverse bool) ([]Change, error)
 	// Delete the changeset from the database or return an error if there is a
 	// problem running the query.
 	Delete(id, author, filename string) error
+}
+
+// Change contains a single database record change.
+type Change struct {
+	ID            string
+	Author        string
+	Filename      string
+	OrderExecuted int
 }
 
 // Transaction represents a database transaction.

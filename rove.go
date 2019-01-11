@@ -13,8 +13,6 @@ const (
 )
 
 var (
-	// ErrInvalidHeader is when the changeset header is invalid.
-	ErrInvalidHeader = errors.New("invalid changeset header")
 	// ErrInvalidFormat is when a changeset is not found.
 	ErrInvalidFormat = errors.New("invalid changeset format")
 )
@@ -30,14 +28,6 @@ type Rove struct {
 	changeset string
 	// db is a migration.
 	db Migration
-}
-
-// DBChangeset contains a single database record change.
-type DBChangeset struct {
-	ID            string
-	Author        string
-	Filename      string
-	OrderExecuted int
 }
 
 // NewFileMigration returns a file migration object.

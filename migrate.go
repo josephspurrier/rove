@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+
+	"github.com/josephspurrier/rove/pkg/changeset"
 )
 
 // Migrate will perform all the migrations in a file. If max is 0, all
@@ -15,7 +17,7 @@ func (r *Rove) Migrate(max int) error {
 		return err
 	}
 
-	arr := make([]Changeset, 0)
+	arr := make([]changeset.Info, 0)
 	// If a file is specified, use it to build the array.
 	if len(r.file) > 0 {
 		// Get the changesets.
@@ -40,20 +42,20 @@ func (r *Rove) Migrate(max int) error {
 
 		// Determine if the changeset was already applied.
 		// Count the number of rows.
-		checksum, err = r.db.ChangesetApplied(cs.id, cs.author, cs.filename)
+		checksum, err = r.db.ChangesetApplied(cs.ID, cs.Author, cs.Filename)
 		if err == nil {
 			// Determine if the checksums match.
 			if checksum != newChecksum {
 				return fmt.Errorf("checksum does not match - existing changeset %v:%v has checksum %v, but new changeset has checksum %v",
-					cs.author, cs.id, checksum, newChecksum)
+					cs.Author, cs.ID, checksum, newChecksum)
 			}
 
 			if r.Verbose {
-				fmt.Printf("Changeset already applied: %v:%v\n", cs.author, cs.id)
+				fmt.Printf("Changeset already applied: %v:%v\n", cs.Author, cs.ID)
 			}
 			continue
 		} else if err != nil && err != sql.ErrNoRows {
-			return fmt.Errorf("internal error on changeset %v:%v - %v", cs.author, cs.id, err.Error())
+			return fmt.Errorf("internal error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		arrQueries := strings.Split(cs.Changes(), ";")
@@ -72,7 +74,7 @@ func (r *Rove) Migrate(max int) error {
 			// Execute the query.
 			err = tx.Exec(q)
 			if err != nil {
-				return fmt.Errorf("sql error on changeset %v:%v - %v", cs.author, cs.id, err.Error())
+				return fmt.Errorf("sql error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
 			}
 		}
 
@@ -80,9 +82,9 @@ func (r *Rove) Migrate(max int) error {
 		if err != nil {
 			errr := tx.Rollback()
 			if errr != nil {
-				return fmt.Errorf("sql error on commit rollback %v:%v - %v", cs.author, cs.id, errr.Error())
+				return fmt.Errorf("sql error on commit rollback %v:%v - %v", cs.Author, cs.ID, errr.Error())
 			}
-			return fmt.Errorf("sql error on commit %v:%v - %v", cs.author, cs.id, err.Error())
+			return fmt.Errorf("sql error on commit %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		// Count the number of rows.
@@ -92,14 +94,14 @@ func (r *Rove) Migrate(max int) error {
 		}
 
 		// Insert the record.
-		err = r.db.Insert(cs.id, cs.author, cs.filename, count+1, newChecksum,
-			cs.description, cs.version)
+		err = r.db.Insert(cs.ID, cs.Author, cs.Filename, count+1, newChecksum,
+			cs.Description, cs.Version)
 		if err != nil {
 			return err
 		}
 
 		if r.Verbose {
-			fmt.Printf("Changeset applied: %v:%v\n", cs.author, cs.id)
+			fmt.Printf("Changeset applied: %v:%v\n", cs.Author, cs.ID)
 		}
 
 		// Only perform the maxium number of changes based on the max value.
