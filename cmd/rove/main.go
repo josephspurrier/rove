@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/josephspurrier/rove"
+	"github.com/josephspurrier/rove/pkg/database"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -27,37 +28,53 @@ var (
 	cDBDown      = cDB.Command("down", "Apply a specific number of rollbacks to the database.")
 	cDBDownCount = cDBDown.Arg("count", "Number of rollbacks [int].").Required().Int()
 	cDBDownFile  = cDBDown.Arg("file", "Filename of the migration file [string].").Required().String()
+
+	cDBStatus = cDB.Command("status", "Output the list of migrations already applied to the database.")
 )
 
 func main() {
 	argList := os.Args[1:]
 	arg := kingpin.MustParse(app.Parse(argList))
 
+	// Create a new MySQL database object.
+	conn, err := database.NewConnection(*cDBPrefix)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	m, err := database.NewMySQL(conn)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	switch arg {
 	case cDBAll.FullCommand():
-		err := rove.Migrate(*cDBAllFile, *cDBPrefix, 0, true)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		r := rove.NewFileMigration(m, *cDBAllFile)
+		r.Verbose = true
+		err = r.Migrate(0)
 	case cDBUp.FullCommand():
-		err := rove.Migrate(*cDBUpFile, *cDBPrefix, *cDBUpCount, true)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		r := rove.NewFileMigration(m, *cDBUpFile)
+		r.Verbose = true
+		err = r.Migrate(*cDBUpCount)
 	case cDBReset.FullCommand():
-		err := rove.Reset(*cDBResetFile, *cDBPrefix, 0, true)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
+		r := rove.NewFileMigration(m, *cDBResetFile)
+		r.Verbose = true
+		err = r.Reset(0)
 	case cDBDown.FullCommand():
-		err := rove.Reset(*cDBDownFile, *cDBPrefix, *cDBDownCount, true)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		r := rove.NewFileMigration(m, *cDBDownFile)
+		r.Verbose = true
+		err = r.Reset(*cDBDownCount)
+	case cDBStatus.FullCommand():
+		r := rove.NewFileMigration(m, *cDBDownFile)
+		r.Verbose = true
+		_, err = r.Status()
+	}
+
+	// If there is an error, return with an error code of 1.
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }

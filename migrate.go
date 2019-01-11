@@ -8,22 +8,27 @@ import (
 
 // Migrate will perform all the migrations in a file. If max is 0, all
 // migrations are run.
-func Migrate(filename string, prefix string, max int, verbose bool) error {
-	db, err := connect(prefix)
+func (r *Rove) Migrate(max int) error {
+	// Create a changelog table.
+	err := r.db.CreateChangelogTable()
 	if err != nil {
 		return err
 	}
 
-	// Create the DATABASECHANGELOG.
-	_, err = db.Exec(sqlChangelog)
-	if err != nil {
-		return err
-	}
-
-	// Get the changesets.
-	arr, err := parseFileToArray(filename)
-	if err != nil {
-		return err
+	arr := make([]Changeset, 0)
+	// If a file is specified, use it to build the array.
+	if len(r.file) > 0 {
+		// Get the changesets.
+		arr, err = parseFileToArray(r.file)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Else use the changeset that was passed in.
+		arr, err = parseToArray(strings.NewReader(r.changeset), elementMemory)
+		if err != nil {
+			return err
+		}
 	}
 
 	maxCounter := 0
@@ -35,11 +40,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 
 		// Determine if the changeset was already applied.
 		// Count the number of rows.
-		err = db.Get(&checksum, `SELECT md5sum
-			FROM databasechangelog
-			WHERE id = ?
-			AND author = ?
-			AND filename = ?`, cs.id, cs.author, cs.filename)
+		checksum, err = r.db.ChangesetApplied(cs.id, cs.author, cs.filename)
 		if err == nil {
 			// Determine if the checksums match.
 			if checksum != newChecksum {
@@ -47,7 +48,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 					cs.author, cs.id, checksum, newChecksum)
 			}
 
-			if verbose {
+			if r.Verbose {
 				fmt.Printf("Changeset already applied: %v:%v\n", cs.author, cs.id)
 			}
 			continue
@@ -57,7 +58,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 
 		arrQueries := strings.Split(cs.Changes(), ";")
 
-		tx, err := db.Begin()
+		tx, err := r.db.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
@@ -69,7 +70,7 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 			}
 
 			// Execute the query.
-			_, err = tx.Exec(q)
+			err = tx.Exec(q)
 			if err != nil {
 				return fmt.Errorf("sql error on changeset %v:%v - %v", cs.author, cs.id, err.Error())
 			}
@@ -85,32 +86,26 @@ func Migrate(filename string, prefix string, max int, verbose bool) error {
 		}
 
 		// Count the number of rows.
-		count := 0
-		err = db.Get(&count, `SELECT COUNT(*) FROM databasechangelog`)
+		count, err := r.db.Count()
 		if err != nil {
 			return err
 		}
 
 		// Insert the record.
-		_, err = db.Exec(`
-			INSERT INTO databasechangelog
-			(id,author,filename,dateexecuted,orderexecuted,md5sum,description,version)
-			VALUES(?,?,?,NOW(),?,?,?,?)
-			`, cs.id, cs.author, cs.filename, count+1, newChecksum, cs.description, cs.version)
+		err = r.db.Insert(cs.id, cs.author, cs.filename, count+1, newChecksum,
+			cs.description, cs.version)
 		if err != nil {
 			return err
 		}
 
-		if verbose {
+		if r.Verbose {
 			fmt.Printf("Changeset applied: %v:%v\n", cs.author, cs.id)
 		}
 
 		// Only perform the maxium number of changes based on the max value.
 		maxCounter++
-		if max != 0 {
-			if maxCounter >= max {
-				break
-			}
+		if max != 0 && maxCounter >= max {
+			break
 		}
 	}
 

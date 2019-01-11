@@ -12,7 +12,7 @@ import (
 )
 
 // parseFileToArray will parse a file into changesets.
-func parseFileToArray(filename string) ([]*Changeset, error) {
+func parseFileToArray(filename string) ([]Changeset, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -23,12 +23,12 @@ func parseFileToArray(filename string) ([]*Changeset, error) {
 }
 
 // parseToArray will split the SQL migration into an ordered array.
-func parseToArray(r io.Reader, filename string) ([]*Changeset, error) {
+func parseToArray(r io.Reader, filename string) ([]Changeset, error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 
 	// Array of changesets.
-	arr := make([]*Changeset, 0)
+	arr := make([]Changeset, 0)
 
 	for scanner.Scan() {
 		// Get the line without leading or trailing spaces.
@@ -58,7 +58,7 @@ func parseToArray(r io.Reader, filename string) ([]*Changeset, error) {
 			cs := new(Changeset)
 			cs.ParseHeader(strings.TrimPrefix(line, elementChangeset))
 			cs.SetFileInfo(path.Base(filename), "sql", appVersion)
-			arr = append(arr, cs)
+			arr = append(arr, *cs)
 			continue
 		}
 
@@ -69,8 +69,7 @@ func parseToArray(r io.Reader, filename string) ([]*Changeset, error) {
 
 		// Determine if the line is a rollback.
 		if strings.HasPrefix(line, elementRollback) {
-			cs := arr[len(arr)-1]
-			cs.AddRollback(strings.TrimPrefix(line, elementRollback))
+			arr[len(arr)-1].AddRollback(strings.TrimPrefix(line, elementRollback))
 			continue
 		}
 
@@ -80,8 +79,7 @@ func parseToArray(r io.Reader, filename string) ([]*Changeset, error) {
 		}
 
 		// Add the line as a changeset.
-		cs := arr[len(arr)-1]
-		cs.AddChange(line)
+		arr[len(arr)-1].AddChange(line)
 	}
 
 	return arr, nil
@@ -95,16 +93,20 @@ func parseFileToMap(filename string) (map[string]Changeset, error) {
 	}
 	defer f.Close()
 
-	return parseToMap(f, filename)
+	return parseReaderToMap(f, filename)
 }
 
-// parseToMap will parse a reader to a map.
-func parseToMap(r io.Reader, filename string) (map[string]Changeset, error) {
+// parseReaderToMap will parse a reader to a map.
+func parseReaderToMap(r io.Reader, filename string) (map[string]Changeset, error) {
 	arr, err := parseToArray(r, filename)
 	if err != nil {
 		return nil, err
 	}
 
+	return parseArrayToMap(arr)
+}
+
+func parseArrayToMap(arr []Changeset) (map[string]Changeset, error) {
 	m := make(map[string]Changeset)
 
 	for _, cs := range arr {
@@ -113,7 +115,7 @@ func parseToMap(r io.Reader, filename string) (map[string]Changeset, error) {
 			return nil, errors.New("Duplicate entry found: " + id)
 		}
 
-		m[id] = *cs
+		m[id] = cs
 	}
 
 	return m, nil

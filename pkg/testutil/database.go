@@ -10,6 +10,8 @@ import (
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/database"
 	"github.com/josephspurrier/rove/pkg/env"
+
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -40,7 +42,7 @@ func unsetEnv(unique string) {
 }
 
 // connectDatabase returns a test database connection.
-func connectDatabase(dbSpecificDB bool, unique string) *database.DBW {
+func connectDatabase(dbSpecificDB bool, unique string) *sqlx.DB {
 	dbc := new(database.Connection)
 	err := env.Unmarshal(dbc, unique)
 	if err != nil {
@@ -52,14 +54,12 @@ func connectDatabase(dbSpecificDB bool, unique string) *database.DBW {
 		fmt.Println("DB Error:", err)
 	}
 
-	dbw := database.New(connection)
-
-	return dbw
+	return connection
 }
 
 // SetupDatabase will create the test database and set the environment
 // variables.
-func SetupDatabase() (*database.DBW, string) {
+func SetupDatabase() (*sqlx.DB, string) {
 	unique := "T" + fmt.Sprint(rand.Intn(500))
 	setEnv(unique)
 
@@ -89,13 +89,22 @@ func TeardownDatabase(unique string) {
 }
 
 // LoadDatabaseFromFile will set up the DB for the tests.
-func LoadDatabaseFromFile(file string, usePrefix bool) (*database.DBW, string) {
+func LoadDatabaseFromFile(file string, usePrefix bool) (*sqlx.DB, string) {
 	unique := ""
-	var db *database.DBW
+	var db *sqlx.DB
+
+	var r *rove.Rove
 
 	if usePrefix {
 		db, unique = SetupDatabase()
+		// Create a new MySQL database object.
+		m := new(database.MySQL)
+		m.DB = db
+		r = rove.NewFileMigration(m, file)
 	} else {
+		m := new(database.MySQL)
+		m.DB = db
+		r = rove.NewFileMigration(m, file)
 		setEnv(unique)
 		db = connectDatabase(false, unique)
 		_, err := db.Exec(`DROP DATABASE IF EXISTS ` + TestDatabaseName)
@@ -110,7 +119,7 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*database.DBW, string) {
 		db = connectDatabase(true, unique)
 	}
 
-	err := rove.Migrate(file, unique, 0, false)
+	err := r.Migrate(0)
 	if err != nil {
 		log.Println("DB Error:", err)
 	}

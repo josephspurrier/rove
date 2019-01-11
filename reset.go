@@ -6,49 +6,55 @@ import (
 	"strings"
 )
 
-// DBChangeset represents the database table records.
-type DBChangeset struct {
-	ID            string `db:"id"`
-	Author        string `db:"author"`
-	Filename      string `db:"filename"`
-	OrderExecuted int    `db:"orderexecuted"`
+// loadChangesets will get the changesets based on the type of migration
+// specified during the creation of the Rove object.
+func (r *Rove) loadChangesets() (map[string]Changeset, error) {
+	// Use the file to get the changesets first.
+	if len(r.file) > 0 {
+		// Get the changesets in a map.
+		m, err := parseFileToMap(r.file)
+		if err != nil {
+			return nil, err
+		}
+
+		return m, nil
+	}
+
+	// Else use the changeset that was passed in.
+	arr, err := parseReaderToMap(strings.NewReader(r.changeset), elementMemory)
+	if err != nil {
+		return nil, err
+	}
+
+	return arr, nil
 }
 
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
-func Reset(filename string, prefix string, max int, verbose bool) (err error) {
-	db, err := connect(prefix)
+func (r *Rove) Reset(max int) error {
+	// Get the changesets.
+	m, err := r.loadChangesets()
 	if err != nil {
 		return err
 	}
 
-	// Get the changesets in a map.
-	m, err := parseFileToMap(filename)
-	if err != nil {
-		return err
-	}
-
-	// Get each changeset from the database.
-	results := make([]DBChangeset, 0)
-	err = db.Select(&results, `
-		SELECT id, author, filename, orderexecuted
-		FROM databasechangelog
-		ORDER BY orderexecuted DESC;`)
+	// Get an array of changesets from the database.
+	results, err := r.db.Changesets(true)
 	if err != nil {
 		return err
 	}
 
 	if len(results) == 0 {
-		if verbose {
+		if r.Verbose {
 			fmt.Println("No rollbacks to perform.")
-			return nil
 		}
+		return nil
 	}
 
 	maxCounter := 0
 
 	// Loop through each changeset.
-	for _, r := range results {
-		id := fmt.Sprintf("%v:%v:%v", r.Author, r.ID, r.Filename)
+	for _, rs := range results {
+		id := fmt.Sprintf("%v:%v:%v", rs.Author, rs.ID, rs.Filename)
 
 		cs, ok := m[id]
 		if !ok {
@@ -57,7 +63,7 @@ func Reset(filename string, prefix string, max int, verbose bool) (err error) {
 
 		arrQueries := strings.Split(cs.Rollbacks(), ";")
 
-		tx, err := db.Begin()
+		tx, err := r.db.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
@@ -69,7 +75,7 @@ func Reset(filename string, prefix string, max int, verbose bool) (err error) {
 			}
 
 			// Execute the query.
-			_, err = tx.Exec(q)
+			err = tx.Exec(q)
 			if err != nil {
 				return fmt.Errorf("sql error on rollback %v:%v - %v", cs.author, cs.id, err.Error())
 			}
@@ -85,27 +91,21 @@ func Reset(filename string, prefix string, max int, verbose bool) (err error) {
 		}
 
 		// Delete the record.
-		_, err = db.Exec(`
-			DELETE FROM databasechangelog
-			WHERE id = ? AND author = ? AND filename = ?
-			LIMIT 1
-			`, cs.id, cs.author, cs.filename)
+		err = r.db.Delete(cs.id, cs.author, cs.filename)
 		if err != nil {
 			return err
 		}
 
-		if verbose {
+		if r.Verbose {
 			fmt.Printf("Rollback applied: %v:%v\n", cs.author, cs.id)
 		}
 
 		// Only perform the maxium number of changes based on the max value.
 		maxCounter++
-		if max != 0 {
-			if maxCounter >= max {
-				break
-			}
+		if max != 0 && maxCounter >= max {
+			break
 		}
 	}
 
-	return
+	return nil
 }
