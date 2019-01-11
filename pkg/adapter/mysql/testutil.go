@@ -1,4 +1,4 @@
-package testutil
+package mysql
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/database"
 	"github.com/josephspurrier/rove/pkg/env"
 
 	"github.com/jmoiron/sqlx"
@@ -43,7 +42,7 @@ func unsetEnv(unique string) {
 
 // connectDatabase returns a test database connection.
 func connectDatabase(dbSpecificDB bool, unique string) *sqlx.DB {
-	dbc := new(database.Connection)
+	dbc := new(Connection)
 	err := env.Unmarshal(dbc, unique)
 	if err != nil {
 		fmt.Println("DB ENV Error:", err)
@@ -98,11 +97,11 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*sqlx.DB, string) {
 	if usePrefix {
 		db, unique = SetupDatabase()
 		// Create a new MySQL database object.
-		m := new(database.MySQL)
+		m := new(MySQL)
 		m.DB = db
 		r = rove.NewFileMigration(m, file)
 	} else {
-		m := new(database.MySQL)
+		m := new(MySQL)
 		m.DB = db
 		r = rove.NewFileMigration(m, file)
 		setEnv(unique)

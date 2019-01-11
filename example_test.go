@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/database"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 )
 
 func Example() {
@@ -31,7 +31,7 @@ INSERT INTO user_status (id, status, created_at, updated_at, deleted) VALUES
 --rollback TRUNCATE TABLE user_status;`
 
 	// Create a new MySQL database object.
-	db, err := database.NewMySQL(&database.Connection{
+	db, err := mysql.New(&mysql.Connection{
 		Hostname:  "127.0.0.1",
 		Username:  "root",
 		Password:  "password",

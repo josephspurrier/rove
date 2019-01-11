@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/database"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -35,14 +35,15 @@ func main() {
 	argList := os.Args[1:]
 	arg := kingpin.MustParse(app.Parse(argList))
 
-	// Create a new MySQL database object.
-	conn, err := database.NewConnection(*cDBPrefix)
+	// Create a new MySQL connection.
+	conn, err := mysql.NewConnection(*cDBPrefix)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	m, err := database.NewMySQL(conn)
+	// Create a new MySQL database object.
+	db, err := mysql.New(conn)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -50,23 +51,23 @@ func main() {
 
 	switch arg {
 	case cDBAll.FullCommand():
-		r := rove.NewFileMigration(m, *cDBAllFile)
+		r := rove.NewFileMigration(db, *cDBAllFile)
 		r.Verbose = true
 		err = r.Migrate(0)
 	case cDBUp.FullCommand():
-		r := rove.NewFileMigration(m, *cDBUpFile)
+		r := rove.NewFileMigration(db, *cDBUpFile)
 		r.Verbose = true
 		err = r.Migrate(*cDBUpCount)
 	case cDBReset.FullCommand():
-		r := rove.NewFileMigration(m, *cDBResetFile)
+		r := rove.NewFileMigration(db, *cDBResetFile)
 		r.Verbose = true
 		err = r.Reset(0)
 	case cDBDown.FullCommand():
-		r := rove.NewFileMigration(m, *cDBDownFile)
+		r := rove.NewFileMigration(db, *cDBDownFile)
 		r.Verbose = true
 		err = r.Reset(*cDBDownCount)
 	case cDBStatus.FullCommand():
-		r := rove.NewFileMigration(m, *cDBDownFile)
+		r := rove.NewFileMigration(db, *cDBDownFile)
 		r.Verbose = true
 		_, err = r.Status()
 	}

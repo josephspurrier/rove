@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/josephspurrier/rove/pkg/testutil"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -13,11 +13,11 @@ import (
 
 func TestMigrationAll(t *testing.T) {
 	_, unique := migrateAll(t)
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 func migrateAll(t *testing.T) (*sqlx.DB, string) {
-	db, unique := testutil.SetupDatabase()
+	db, unique := mysql.SetupDatabase()
 
 	// Set the arguments.
 	os.Args = []string{
@@ -87,16 +87,16 @@ func TestMigrationReset(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 0, rows)
 
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 func TestMigrationUp(t *testing.T) {
 	_, unique := migrateUp(t)
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 func migrateUp(t *testing.T) (*sqlx.DB, string) {
-	db, unique := testutil.SetupDatabase()
+	db, unique := mysql.SetupDatabase()
 
 	// Set the arguments.
 	os.Args = []string{
@@ -168,5 +168,5 @@ func TestMigrationDown(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, rows)
 
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }

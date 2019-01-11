@@ -4,17 +4,16 @@ import (
 	"testing"
 
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/database"
-	"github.com/josephspurrier/rove/pkg/testutil"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFileMigration(t *testing.T) {
-	db, unique := testutil.SetupDatabase()
+	db, unique := mysql.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(database.MySQL)
+	m := new(mysql.MySQL)
 	m.DB = db
 
 	// Set up rove.
@@ -71,14 +70,14 @@ func TestFileMigration(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "josephspurrier:1", s)
 
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 func TestMigrationFailDuplicate(t *testing.T) {
-	db, unique := testutil.SetupDatabase()
+	db, unique := mysql.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(database.MySQL)
+	m := new(mysql.MySQL)
 	m.DB = db
 
 	// Set up rove.
@@ -94,14 +93,14 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, rows)
 
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 func TestInclude(t *testing.T) {
-	db, unique := testutil.SetupDatabase()
+	db, unique := mysql.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(database.MySQL)
+	m := new(mysql.MySQL)
 	m.DB = db
 
 	// Set up rove.
@@ -153,14 +152,14 @@ func TestInclude(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, rows)
 
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 func TestChangesetMigration(t *testing.T) {
-	db, unique := testutil.SetupDatabase()
+	db, unique := mysql.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(database.MySQL)
+	m := new(mysql.MySQL)
 	m.DB = db
 
 	// Set up rove.
@@ -212,7 +211,7 @@ func TestChangesetMigration(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, rows)
 
-	testutil.TeardownDatabase(unique)
+	mysql.TeardownDatabase(unique)
 }
 
 var sSuccess = `

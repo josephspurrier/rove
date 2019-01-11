@@ -1,5 +1,5 @@
-// Package database is a MySQL changelog adapter.
-package database
+// Package mysql is a MySQL changelog adapter.
+package mysql
 
 import (
 	"database/sql"
@@ -37,9 +37,9 @@ type MySQL struct {
 	tablename string
 }
 
-// NewMySQL connects to the database and returns an object that satisfies the
+// New connects to the database and returns an object that satisfies the
 // rove.Migration interface.
-func NewMySQL(c *Connection) (m *MySQL, err error) {
+func New(c *Connection) (m *MySQL, err error) {
 	// Connect to the database.
 	m = new(MySQL)
 	m.DB, err = c.Connect(true)
