@@ -13,23 +13,22 @@ import (
 var (
 	app = kingpin.New("rove", "Performs database migration tasks.")
 
-	cDB        = app.Command("migrate", "Perform actions on the database.")
-	cDBPrefix  = cDB.Flag("envprefix", "Prefix for environment variables.").String()
-	cDBAll     = cDB.Command("all", "Apply all changesets to the database.")
+	cDBPrefix  = app.Flag("envprefix", "Prefix for environment variables.").String()
+	cDBAll     = app.Command("all", "Apply all changesets to the database.")
 	cDBAllFile = cDBAll.Arg("file", "Filename of the migration file [string].").Required().String()
 
-	cDBUp      = cDB.Command("up", "Apply a specific number of changesets to the database.")
+	cDBUp      = app.Command("up", "Apply a specific number of changesets to the database.")
 	cDBUpCount = cDBUp.Arg("count", "Number of changesets [int].").Required().Int()
 	cDBUpFile  = cDBUp.Arg("file", "Filename of the migration file [string].").Required().String()
 
-	cDBReset     = cDB.Command("reset", "Run all rollbacks on the database.")
+	cDBReset     = app.Command("reset", "Run all rollbacks on the database.")
 	cDBResetFile = cDBReset.Arg("file", "Filename of the migration file [string].").Required().String()
 
-	cDBDown      = cDB.Command("down", "Apply a specific number of rollbacks to the database.")
+	cDBDown      = app.Command("down", "Apply a specific number of rollbacks to the database.")
 	cDBDownCount = cDBDown.Arg("count", "Number of rollbacks [int].").Required().Int()
 	cDBDownFile  = cDBDown.Arg("file", "Filename of the migration file [string].").Required().String()
 
-	cDBStatus = cDB.Command("status", "Output the list of migrations already applied to the database.")
+	cDBStatus = app.Command("status", "Output the list of migrations already applied to the database.")
 )
 
 func main() {

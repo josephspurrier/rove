@@ -56,9 +56,9 @@ CREATE DATABASE webapi DEFAULT CHARSET = utf8 COLLATE = utf8_unicode_ci;
 go install
 
 # Apply the database migrations without a password.
-DB_USERNAME=root DB_HOSTNAME=127.0.0.1 DB_PORT=3306 DB_DATABASE=webapi rove migrate all testdata/success.sql
+DB_USERNAME=root DB_HOSTNAME=127.0.0.1 DB_PORT=3306 DB_DATABASE=webapi rove all testdata/success.sql
 # or apply the database migrations with a password.
-DB_USERNAME=root DB_PASSWORD=somepassword DB_HOSTNAME=127.0.0.1 DB_PORT=3306 DB_DATABASE=webapi rove migrate all testdata/success.sql
+DB_USERNAME=root DB_PASSWORD=somepassword DB_HOSTNAME=127.0.0.1 DB_PORT=3306 DB_DATABASE=webapi rove all testdata/success.sql
 ```
 
 ## Rove Usage
@@ -83,19 +83,19 @@ Commands:
   help [<command>...]
     Show help.
 
-  migrate all <file>
+  all <file>
     Apply all changesets to the database.
 
-  migrate up <count> <file>
+  up <count> <file>
     Apply a specific number of changesets to the database.
 
-  migrate reset <file>
+  reset <file>
     Run all rollbacks on the database.
 
-  migrate down <count> <file>
+  down <count> <file>
     Apply a specific number of rollbacks to the database.
 
-  migrate status
+  status
     Output the list of migrations already applied to the database.
 ```
 
@@ -128,44 +128,44 @@ export DB_DATABASE=webapi
 export DB_PARAMETER="collation=utf8mb4_unicode_ci&parseTime=true"
 
 # Apply all of the changes from the SQL file to the database.
-rove migrate all testdata/changeset.sql
+rove all testdata/changeset.sql
 # Output:
 # Changeset applied: josephspurrier:1
 # Changeset applied: josephspurrier:2
 # Changeset applied: josephspurrier:3
 
 # Try to apply all the changes again.
-rove migrate all testdata/changeset.sql
+rove all testdata/changeset.sql
 # Output:
 # Changeset already applied: josephspurrier:1
 # Changeset already applied: josephspurrier:2
 # Changeset already applied: josephspurrier:3
 
 # Rollback all of the changes to the database.
-rove migrate reset testdata/changeset.sql
+rove reset testdata/changeset.sql
 # Output:
 # Rollback applied: josephspurrier:3
 # Rollback applied: josephspurrier:2
 # Rollback applied: josephspurrier:1
 
 # Apply only 1 new change to the database.
-rove migrate up 1 testdata/success.sql
+rove up 1 testdata/success.sql
 # Output:
 # Changeset applied: josephspurrier:1
 
 # Apply 1 more change to the database.
-rove migrate up 1 testdata/changeset.sql
+rove up 1 testdata/changeset.sql
 # Output:
 # Changeset already applied: josephspurrier:1
 # Changeset applied: josephspurrier:2
 
 # Rollback only 1 change to the database.
-rove migrate down 1 testdata/changeset.sql
+rove down 1 testdata/changeset.sql
 # Output:
 # Rollback applied: josephspurrier:2
 
 # Show a list of migrations already applied to the database.
-rove migrate status
+rove status
 # Output:
 # Changeset: josephspurrier:1
 ```
