@@ -31,14 +31,14 @@ type dbchangeset struct {
 	OrderExecuted int    `db:"orderexecuted"`
 }
 
-// MySQL is a MySQL database connection.
+// MySQL is a MySQL database changelog.
 type MySQL struct {
 	DB        *sqlx.DB
 	tablename string
 }
 
 // New connects to the database and returns an object that satisfies the
-// rove.Migration interface.
+// rove.Changelog interface.
 func New(c *Connection) (m *MySQL, err error) {
 	// Connect to the database.
 	m = new(MySQL)

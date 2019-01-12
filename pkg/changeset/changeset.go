@@ -13,12 +13,13 @@ var (
 
 // Record is a changeset.
 type Record struct {
-	ID          string
-	Author      string
-	Filename    string
-	MD5         string
-	Description string
-	Version     string
+	ID            string
+	Author        string
+	Filename      string
+	MD5           string
+	Description   string
+	Version       string
+	OrderExecuted int //FIXME: I don't think these should be here.
 
 	change   []string
 	rollback []string
