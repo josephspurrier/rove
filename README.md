@@ -215,3 +215,78 @@ r := rove.NewChangesetMigration(db, changesets)
 r.Verbose = true
 err = r.Migrate(0)
 ```
+
+## Adapters
+
+Rove is designed to be extensible via adapters. There are a few adapters built include in the standard package:
+
+* mysql
+* jsonfile
+
+You may also create your own adapters - see the `interface.go` file for interfaces your adapters must satisfy.
+
+## Migration File Specifications
+
+There are a few components of a changeset:
+
+- Header: must be prefixed by "--changeset " and must follow this format: `author:id` (single line, required)
+- Body: valid sql text (multi-line, required)
+- Description: must be prefixed by "--description " (multi-line, optional)
+- Rollback: must be prefixed "--rollback "  (multi-line, optional)
+- Include: must be prefixed by "--include " and must follow this format: `relativefilename.sql` (single line, optional)
+- Comments: any other line that starts with "--" (multi-line, optional)
+
+The number of lines or between changesets does not matter.
+
+Example migration file:
+
+```sql
+--changeset josephspurrier:1
+--description Create the user status table.
+--description Ensure no auto value on zero.
+SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+CREATE TABLE user_status (
+    id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,
+    
+    status VARCHAR(25) NOT NULL,
+    
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    
+    PRIMARY KEY (id)
+);
+--rollback DROP TABLE user_status;
+
+--include anotherfile.sql
+
+--changeset josephspurrier:2
+INSERT INTO user_status (id, status, created_at, updated_at, deleted) VALUES
+(1, 'active',   CURRENT_TIMESTAMP,  CURRENT_TIMESTAMP,  0),
+(2, 'inactive', CURRENT_TIMESTAMP,  CURRENT_TIMESTAMP,  0);
+--rollback TRUNCATE TABLE user_status;
+```
+
+### Header
+
+The header is the unique identifier for the changeset. A changeset is unique is all of these fields don't match another changeset: id, author, and filename. You can have a changeset with the same id and author in two different files.
+
+### Body
+
+The body must be valid single or multi-line SQL queries. You can separate queries by semi-colons, but you must also pass in this parameter to the database connection: `multiStatements=true`. The checksum is based on an MD5 of this value. Any changes once the query has been applied to a database will throw an error message.
+
+### Description
+
+The description provides information about the changeset. It will be added as a value in the changelog table.
+
+### Rollback
+
+The rollback should be SQL reverting the changes made by the queries from the body.
+
+### Include
+
+The include allows you to reference other changeset files to load. The filename should be a relative path.
+
+### Comments
+
+Any comments at the beginning of the lines are ignored. They do not count towards the checksum.
