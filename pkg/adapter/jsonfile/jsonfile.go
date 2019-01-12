@@ -2,8 +2,6 @@
 package jsonfile
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -15,6 +13,9 @@ import (
 type Info struct {
 	filename string
 	db       *mysql.MySQL
+
+	// FileMode is the permissions on the changelog file during create and save.
+	FileMode os.FileMode
 }
 
 // Changeset contains a single record change.
@@ -30,7 +31,10 @@ type Changeset struct {
 	Version       string `json:"version"`
 }
 
-//id,author,filename,dateexecuted,orderexecuted,md5sum,description,version
+// IsMatch returns true if the changeset matches the values passed.
+func (c *Changeset) IsMatch(id string, author string, filename string) bool {
+	return id == c.ID && author == c.Author && filename == c.Filename
+}
 
 // New sets the filename and returns an object that satisfies the rove.Changelog
 // interface.
@@ -38,6 +42,7 @@ func New(filename string, db *mysql.MySQL) (m *Info, err error) {
 	m = new(Info)
 	m.filename = filename
 	m.db = db
+	m.FileMode = 0644
 	return m, nil
 }
 
@@ -45,7 +50,7 @@ func New(filename string, db *mysql.MySQL) (m *Info, err error) {
 func (m *Info) Initialize() (err error) {
 	// If the file doesn't exist, create the file.
 	if _, err := os.Stat(m.filename); os.IsNotExist(err) {
-		err = ioutil.WriteFile(m.filename, []byte("[]"), 0644)
+		err = m.save(make([]Changeset, 0))
 	}
 
 	return nil
@@ -54,15 +59,8 @@ func (m *Info) Initialize() (err error) {
 // ChangesetApplied returns the checksum if it's found, an error if there was an
 // issue, or a blank checksum with no error if it's not found.
 func (m *Info) ChangesetApplied(id, author, filename string) (checksum string, err error) {
-	// Read the file into memory.
-	b, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return "", err
-	}
-
-	// Convert to JSON.
-	data := make([]Changeset, 0)
-	err = json.Unmarshal(b, &data)
+	// Load the file into memory.
+	data, err := m.load()
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +68,7 @@ func (m *Info) ChangesetApplied(id, author, filename string) (checksum string, e
 	// Loop through to find the data.
 	for _, cs := range data {
 		// If found, return the checksum.
-		if cs.ID == id && cs.Author == author && cs.Filename == filename {
+		if cs.IsMatch(id, author, filename) {
 			return cs.Checksum, nil
 		}
 	}
@@ -88,15 +86,8 @@ func (m *Info) BeginTx() (rove.Transaction, error) {
 
 // Count returns the number of changesets in the changelog.
 func (m *Info) Count() (count int, err error) {
-	// Read the file into memory.
-	b, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return 0, err
-	}
-
-	// Convert to JSON.
-	data := make([]Changeset, 0)
-	err = json.Unmarshal(b, &data)
+	// Load the file into memory.
+	data, err := m.load()
 	if err != nil {
 		return 0, err
 	}
@@ -106,15 +97,8 @@ func (m *Info) Count() (count int, err error) {
 
 // Insert will insert a new record into the database.
 func (m *Info) Insert(id, author, filename string, count int, checksum, description, version string) error {
-	// Read the file into memory.
-	b, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return err
-	}
-
-	// Convert to JSON.
-	data := make([]Changeset, 0)
-	err = json.Unmarshal(b, &data)
+	// Load the file into memory.
+	data, err := m.load()
 	if err != nil {
 		return err
 	}
@@ -130,33 +114,21 @@ func (m *Info) Insert(id, author, filename string, count int, checksum, descript
 		DateExecuted:  time.Now().Format("2006-01-02 13:04:05"),
 	})
 
-	b, err = json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(m.filename, b, 0644)
+	return m.save(data)
 }
 
 // Changesets returns a list of the changesets from the database in ascending
 // order (false) or descending order (true).
 func (m *Info) Changesets(reverse bool) ([]rove.Changeset, error) {
-	// Read the file into memory.
-	b, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert to JSON.
-	results := make([]Changeset, 0)
-	err = json.Unmarshal(b, &results)
+	// Load the file into memory.
+	data, err := m.load()
 	if err != nil {
 		return nil, err
 	}
 
 	// Copy from one struct to another.
 	out := make([]rove.Changeset, 0)
-	for _, i := range results {
+	for _, i := range data {
 		if reverse {
 			out = append([]rove.Changeset{{
 				Author:   i.Author,
@@ -177,32 +149,18 @@ func (m *Info) Changesets(reverse bool) ([]rove.Changeset, error) {
 
 // Delete will delete a changeset from the database.
 func (m *Info) Delete(id, author, filename string) error {
-	// Read the file into memory.
-	b, err := ioutil.ReadFile(m.filename)
-	if err != nil {
-		return err
-	}
-
-	// Convert to JSON.
-	data := make([]Changeset, 0)
-	err = json.Unmarshal(b, &data)
+	// Load the file into memory.
+	data, err := m.load()
 	if err != nil {
 		return err
 	}
 
 	newData := make([]Changeset, 0)
 	for _, cs := range data {
-		if cs.ID == id && cs.Author == author && cs.Filename == filename {
-			// skip
-		} else {
+		if !cs.IsMatch(id, author, filename) {
 			newData = append(newData, cs)
 		}
 	}
 
-	b, err = json.Marshal(newData)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(m.filename, b, 0644)
+	return m.save(newData)
 }

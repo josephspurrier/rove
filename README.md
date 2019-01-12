@@ -238,12 +238,17 @@ You should store the following fields (at a minimum) in your changelog. This wil
 - id
 - author
 - filename
-- dataexecuted
+- dateexecuted
 - orderexecuted
 - checksum
 - description
 - tag
 - version
+
+These fields are not provided by Rove but you should track them in the changelog:
+
+- dateexecuted
+- orderexecuted
 
 ### Example Changelog
 
