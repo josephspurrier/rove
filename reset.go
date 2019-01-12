@@ -39,22 +39,22 @@ func (r *Rove) Reset(max int) error {
 
 		tx, err := r.db.BeginTx()
 		if err != nil {
-			return fmt.Errorf("sql error begin transaction - %v", err.Error())
+			return fmt.Errorf("error on begin transaction - %v", err.Error())
 		}
 
 		// Execute the query.
 		err = tx.Exec(cs.Rollbacks())
 		if err != nil {
-			return fmt.Errorf("sql error on rollback %v:%v - %v", cs.Author, cs.ID, err.Error())
+			return fmt.Errorf("error on rollback %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		err = tx.Commit()
 		if err != nil {
 			errr := tx.Rollback()
 			if errr != nil {
-				return fmt.Errorf("sql error on commit rollback %v:%v - %v", cs.Author, cs.ID, errr.Error())
+				return fmt.Errorf("error on commit rollback %v:%v - %v", cs.Author, cs.ID, errr.Error())
 			}
-			return fmt.Errorf("sql error on commit %v:%v - %v", cs.Author, cs.ID, err.Error())
+			return fmt.Errorf("error on commit %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		// Delete the record.

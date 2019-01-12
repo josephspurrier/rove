@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
-	"github.com/josephspurrier/rove/pkg/changeset"
 )
 
 // Info is a JSON changelog.
@@ -16,6 +16,21 @@ type Info struct {
 	filename string
 	db       *mysql.MySQL
 }
+
+// Changeset contains a single record change.
+type Changeset struct {
+	ID            string `json:"id"`
+	Author        string `json:"author"`
+	Filename      string `json:"filename"`
+	DateExecuted  string `json:"dateexecuted"`
+	OrderExecuted int    `json:"orderexecuted"`
+	Checksum      string `json:"checksum"`
+	Description   string `json:"description"`
+	Tag           string `json:"tag"`
+	Version       string `json:"version"`
+}
+
+//id,author,filename,dateexecuted,orderexecuted,md5sum,description,version
 
 // New sets the filename and returns an object that satisfies the rove.Changelog
 // interface.
@@ -46,7 +61,7 @@ func (m *Info) ChangesetApplied(id, author, filename string) (checksum string, e
 	}
 
 	// Convert to JSON.
-	data := make([]changeset.Record, 0)
+	data := make([]Changeset, 0)
 	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return "", err
@@ -56,7 +71,7 @@ func (m *Info) ChangesetApplied(id, author, filename string) (checksum string, e
 	for _, cs := range data {
 		// If found, return the checksum.
 		if cs.ID == id && cs.Author == author && cs.Filename == filename {
-			return cs.MD5, nil
+			return cs.Checksum, nil
 		}
 	}
 
@@ -80,7 +95,7 @@ func (m *Info) Count() (count int, err error) {
 	}
 
 	// Convert to JSON.
-	data := make([]changeset.Record, 0)
+	data := make([]Changeset, 0)
 	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return 0, err
@@ -98,19 +113,21 @@ func (m *Info) Insert(id, author, filename string, count int, checksum, descript
 	}
 
 	// Convert to JSON.
-	data := make([]changeset.Record, 0)
+	data := make([]Changeset, 0)
 	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return err
 	}
 
-	data = append(data, changeset.Record{
-		Author:      author,
-		Description: description,
-		Filename:    filename,
-		ID:          id,
-		MD5:         checksum,
-		Version:     version,
+	data = append(data, Changeset{
+		Author:        author,
+		Description:   description,
+		Filename:      filename,
+		ID:            id,
+		Checksum:      checksum,
+		Version:       version,
+		OrderExecuted: len(data) + 1,
+		DateExecuted:  time.Now().Format("2006-01-02 13:04:05"),
 	})
 
 	b, err = json.Marshal(data)
@@ -131,7 +148,7 @@ func (m *Info) Changesets(reverse bool) ([]rove.Changeset, error) {
 	}
 
 	// Convert to JSON.
-	results := make([]changeset.Record, 0)
+	results := make([]Changeset, 0)
 	err = json.Unmarshal(b, &results)
 	if err != nil {
 		return nil, err
@@ -169,13 +186,13 @@ func (m *Info) Delete(id, author, filename string) error {
 	}
 
 	// Convert to JSON.
-	data := make([]changeset.Record, 0)
+	data := make([]Changeset, 0)
 	err = json.Unmarshal(b, &data)
 	if err != nil {
 		return err
 	}
 
-	newData := make([]changeset.Record, 0)
+	newData := make([]Changeset, 0)
 	for _, cs := range data {
 		if cs.ID == id && cs.Author == author && cs.Filename == filename {
 			// skip

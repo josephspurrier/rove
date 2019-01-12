@@ -1,20 +1,7 @@
 package rove
 
-import (
-	"errors"
-)
-
 const (
-	appVersion       = "1.0"
-	elementChangeset = "--changeset "
-	elementRollback  = "--rollback "
-	elementInclude   = "--include "
-	elementMemory    = "memory"
-)
-
-var (
-	// ErrInvalidFormat is when a changeset is not found.
-	ErrInvalidFormat = errors.New("invalid changeset format")
+	appVersion = "1.0"
 )
 
 // Rove contains the database migration information.

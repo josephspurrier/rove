@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Connection holds the details for the MySQL connection.
+// Connection holds the details for a database connection.
 type Connection struct {
 	Username string `json:"Username" env:"DB_USERNAME"`
 	Password string `json:"Password" env:"DB_PASSWORD"`

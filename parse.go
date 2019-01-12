@@ -13,6 +13,19 @@ import (
 	"github.com/josephspurrier/rove/pkg/changeset"
 )
 
+const (
+	elementChangeset   = "--changeset "
+	elementRollback    = "--rollback "
+	elementInclude     = "--include "
+	elementDescription = "--description "
+	elementMemory      = "memory"
+)
+
+var (
+	// ErrInvalidFormat is when a changeset is not found.
+	ErrInvalidFormat = errors.New("invalid changeset format")
+)
+
 // parseFileToArray will parse a file into changesets.
 func parseFileToArray(filename string) ([]changeset.Record, error) {
 	f, err := os.Open(filename)
@@ -24,7 +37,7 @@ func parseFileToArray(filename string) ([]changeset.Record, error) {
 	return parseToArray(f, filename)
 }
 
-// parseToArray will split the SQL migration into an ordered array.
+// parseToArray will split the migration into an ordered array.
 func parseToArray(r io.Reader, filename string) ([]changeset.Record, error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
@@ -59,7 +72,7 @@ func parseToArray(r io.Reader, filename string) ([]changeset.Record, error) {
 			// Create a new changeset.
 			cs := new(changeset.Record)
 			cs.ParseHeader(strings.TrimPrefix(line, elementChangeset))
-			cs.SetFileInfo(path.Base(filename), "sql", appVersion)
+			cs.SetFileInfo(path.Base(filename), appVersion)
 			arr = append(arr, *cs)
 			continue
 		}
@@ -72,6 +85,12 @@ func parseToArray(r io.Reader, filename string) ([]changeset.Record, error) {
 		// Determine if the line is a rollback.
 		if strings.HasPrefix(line, elementRollback) {
 			arr[len(arr)-1].AddRollback(strings.TrimPrefix(line, elementRollback))
+			continue
+		}
+
+		// Determine if the line is a description.
+		if strings.HasPrefix(line, elementDescription) {
+			arr[len(arr)-1].AddDescription(strings.TrimPrefix(line, elementDescription))
 			continue
 		}
 

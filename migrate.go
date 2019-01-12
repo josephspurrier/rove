@@ -59,22 +59,22 @@ func (r *Rove) Migrate(max int) error {
 
 		tx, err := r.db.BeginTx()
 		if err != nil {
-			return fmt.Errorf("sql error begin transaction - %v", err.Error())
+			return fmt.Errorf("error on begin transaction - %v", err.Error())
 		}
 
 		// Execute the query.
 		err = tx.Exec(cs.Changes())
 		if err != nil {
-			return fmt.Errorf("sql error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
+			return fmt.Errorf("error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		err = tx.Commit()
 		if err != nil {
 			errr := tx.Rollback()
 			if errr != nil {
-				return fmt.Errorf("sql error on commit rollback %v:%v - %v", cs.Author, cs.ID, errr.Error())
+				return fmt.Errorf("error on commit rollback %v:%v - %v", cs.Author, cs.ID, errr.Error())
 			}
-			return fmt.Errorf("sql error on commit %v:%v - %v", cs.Author, cs.ID, err.Error())
+			return fmt.Errorf("error on commit %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		// Count the number of rows.
@@ -85,7 +85,7 @@ func (r *Rove) Migrate(max int) error {
 
 		// Insert the record.
 		err = r.db.Insert(cs.ID, cs.Author, cs.Filename, count+1, newChecksum,
-			cs.Description, cs.Version)
+			cs.Descriptions(), cs.Version)
 		if err != nil {
 			return err
 		}

@@ -13,16 +13,15 @@ var (
 
 // Record is a changeset.
 type Record struct {
-	ID            string
-	Author        string
-	Filename      string
-	MD5           string
-	Description   string
-	Version       string
-	OrderExecuted int //FIXME: I don't think these should be here.
+	ID       string
+	Author   string
+	Filename string
+	MD5      string
+	Version  string
 
-	change   []string
-	rollback []string
+	change      []string
+	rollback    []string
+	description []string
 }
 
 // ParseHeader will parse the header information.
@@ -39,9 +38,8 @@ func (cs *Record) ParseHeader(line string) error {
 }
 
 // SetFileInfo will set the file information.
-func (cs *Record) SetFileInfo(filename string, description string, version string) {
+func (cs *Record) SetFileInfo(filename string, version string) {
 	cs.Filename = filename
-	cs.Description = description
 	cs.Version = version
 }
 
@@ -51,6 +49,14 @@ func (cs *Record) AddRollback(line string) {
 		cs.rollback = make([]string, 0)
 	}
 	cs.rollback = append(cs.rollback, line)
+}
+
+// AddDescription will add a description command.
+func (cs *Record) AddDescription(line string) {
+	if len(cs.description) == 0 {
+		cs.description = make([]string, 0)
+	}
+	cs.description = append(cs.description, line)
 }
 
 // AddChange will add a change command.
@@ -69,6 +75,11 @@ func (cs *Record) Changes() string {
 // Rollbacks will return all the rollbacks.
 func (cs *Record) Rollbacks() string {
 	return strings.Join(cs.rollback, "\n")
+}
+
+// Descriptions will return the descriptions.
+func (cs *Record) Descriptions() string {
+	return strings.Join(cs.description, "\n")
 }
 
 // Checksum returns an MD5 checksum for the changeset.
