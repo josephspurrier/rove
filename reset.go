@@ -3,7 +3,6 @@ package rove
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
@@ -38,24 +37,15 @@ func (r *Rove) Reset(max int) error {
 			return errors.New("changeset is missing: " + id)
 		}
 
-		arrQueries := strings.Split(cs.Rollbacks(), ";")
-
 		tx, err := r.db.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
 
-		// Loop through each rollback.
-		for _, q := range arrQueries {
-			if len(q) == 0 {
-				continue
-			}
-
-			// Execute the query.
-			err = tx.Exec(q)
-			if err != nil {
-				return fmt.Errorf("sql error on rollback %v:%v - %v", cs.Author, cs.ID, err.Error())
-			}
+		// Execute the query.
+		err = tx.Exec(cs.Rollbacks())
+		if err != nil {
+			return fmt.Errorf("sql error on rollback %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		err = tx.Commit()

@@ -57,24 +57,15 @@ func (r *Rove) Migrate(max int) error {
 			continue
 		}
 
-		arrQueries := strings.Split(cs.Changes(), ";")
-
 		tx, err := r.db.BeginTx()
 		if err != nil {
 			return fmt.Errorf("sql error begin transaction - %v", err.Error())
 		}
 
-		// Loop through each change.
-		for _, q := range arrQueries {
-			if len(q) == 0 {
-				continue
-			}
-
-			// Execute the query.
-			err = tx.Exec(q)
-			if err != nil {
-				return fmt.Errorf("sql error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
-			}
+		// Execute the query.
+		err = tx.Exec(cs.Changes())
+		if err != nil {
+			return fmt.Errorf("sql error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
 		}
 
 		err = tx.Commit()

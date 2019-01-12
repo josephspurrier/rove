@@ -1,4 +1,4 @@
-package rove_test
+package mysql_test
 
 import (
 	"testing"
@@ -17,7 +17,7 @@ func TestFileMigration(t *testing.T) {
 	m.DB = db
 
 	// Set up rove.
-	r := rove.NewFileMigration(m, "testdata/success.sql")
+	r := rove.NewFileMigration(m, "../testdata/success.sql")
 	r.Verbose = true
 
 	// Run migration.
@@ -81,7 +81,7 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	m.DB = db
 
 	// Set up rove.
-	r := rove.NewFileMigration(m, "testdata/fail-duplicate.sql")
+	r := rove.NewFileMigration(m, "../testdata/fail-duplicate.sql")
 	r.Verbose = true
 
 	err := r.Migrate(0)
@@ -104,7 +104,7 @@ func TestInclude(t *testing.T) {
 	m.DB = db
 
 	// Set up rove.
-	r := rove.NewFileMigration(m, "testdata/parent.sql")
+	r := rove.NewFileMigration(m, "../testdata/parent.sql")
 	r.Verbose = true
 
 	// Run migration.

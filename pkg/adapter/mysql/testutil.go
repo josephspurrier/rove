@@ -28,7 +28,7 @@ func setEnv(unique string) {
 	os.Setenv(unique+"DB_USERNAME", "root")
 	os.Setenv(unique+"DB_PASSWORD", "")
 	os.Setenv(unique+"DB_DATABASE", TestDatabaseName+unique)
-	os.Setenv(unique+"DB_PARAMETER", "parseTime=true&allowNativePasswords=true")
+	os.Setenv(unique+"DB_PARAMETER", "parseTime=true&allowNativePasswords=true&multiStatements=true")
 }
 
 func unsetEnv(unique string) {

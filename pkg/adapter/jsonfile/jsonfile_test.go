@@ -22,7 +22,7 @@ func TestFileMigration(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set up rove.
-	r := rove.NewFileMigration(js, "testdata/success.sql")
+	r := rove.NewFileMigration(js, "../testdata/success.sql")
 	r.Verbose = true
 
 	// Run migration.
@@ -84,7 +84,7 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set up rove.
-	r := rove.NewFileMigration(js, "testdata/fail-duplicate.sql")
+	r := rove.NewFileMigration(js, "../testdata/fail-duplicate.sql")
 	r.Verbose = true
 
 	err = r.Migrate(0)
@@ -111,7 +111,7 @@ func TestInclude(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set up rove.
-	r := rove.NewFileMigration(js, "testdata/parent.sql")
+	r := rove.NewFileMigration(js, "../testdata/parent.sql")
 	r.Verbose = true
 
 	// Run migration.

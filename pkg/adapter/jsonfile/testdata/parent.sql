@@ -1,2 +1,0 @@
---include child1.sql
---include child2.sql
