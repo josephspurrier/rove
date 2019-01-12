@@ -1,6 +1,6 @@
 package rove
 
-// Changelog represents a list of operations that can be run on a changelog.
+// Changelog represents a list of operations for a changelog.
 type Changelog interface {
 	// Initialize should perform any work to set up the changelog or return an
 	// error.
@@ -22,14 +22,6 @@ type Changelog interface {
 	Delete(id, author, filename string) error
 }
 
-// Changeset is a single changeset.
-type Changeset struct {
-	ID            string
-	Author        string
-	Filename      string
-	OrderExecuted int
-}
-
 // Transaction represents a changelog transaction.
 type Transaction interface {
 	// Commit should attempt to commit the changes to to the changelog or
@@ -38,5 +30,12 @@ type Transaction interface {
 	// Rollback should undo changes to the changelog after a failed commit.
 	Rollback() error
 	// Exec should prepare to make a change to the changelog.
-	Exec(query string, args ...interface{}) error
+	Exec(query string) error
+}
+
+// Changeset is a single changeset.
+type Changeset struct {
+	ID       string
+	Author   string
+	Filename string
 }

@@ -1,5 +1,6 @@
 package jsonfile
 
+/*
 import (
 	"fmt"
 	"io/ioutil"
@@ -32,4 +33,4 @@ func (t *Transaction) Rollback() error {
 func (t *Transaction) Exec(query string, args ...interface{}) error {
 	t.data = fmt.Sprintf(query, args...)
 	return nil
-}
+}*/

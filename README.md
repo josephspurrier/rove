@@ -225,6 +225,36 @@ Rove is designed to be extensible via adapters. There are a few adapters built i
 
 You may also create your own adapters - see the `interface.go` file for interfaces your adapters must satisfy.
 
+### Best Practices
+
+When creating an adapter, will need:
+
+- Struct that satisfies the `rove.Changelog` interface.
+- Struct that satisfies the `rove.Transaction` interface.
+- Table or data structure called a `Changelog` to persistently track the changes made by the Rove.
+
+You should store the following fields (at a minimum) in your changelog. This will ensure your adapter can utilize all of the features of Rove.
+
+- id
+- author
+- filename
+- dataexecuted
+- orderexecuted
+- checksum
+- description
+- tag
+- version
+
+### Example Changelog
+
+Your changelog should look contain the same data as this table:
+
+| id | author | filename | dateexecuted | orderexecuted | checksum | description | tag | version |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | josephspurrier | success.sql | 2019-01-12 16:04:16 | 1 | f0685b... | Create the user_status table. | NULL | 1.0 |
+| 2 | josephspurrier | success.sql | 2019-01-12 16:04:16 | 2 | 3f81b0... |  | NULL | 1.0 |
+| 3 | josephspurrier | success.sql | 2019-01-12 16:04:16 | 3 | 57cc0b... |  | NULL | 1.0 |
+
 ## Migration File Specifications
 
 There are a few components of a changeset:

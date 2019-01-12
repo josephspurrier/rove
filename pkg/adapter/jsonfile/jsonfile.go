@@ -159,17 +159,15 @@ func (m *Info) Changesets(reverse bool) ([]rove.Changeset, error) {
 	for _, i := range results {
 		if reverse {
 			out = append([]rove.Changeset{{
-				Author:        i.Author,
-				Filename:      i.Filename,
-				ID:            i.ID,
-				OrderExecuted: i.OrderExecuted,
+				Author:   i.Author,
+				Filename: i.Filename,
+				ID:       i.ID,
 			}}, out...)
 		} else {
 			out = append(out, rove.Changeset{
-				Author:        i.Author,
-				Filename:      i.Filename,
-				ID:            i.ID,
-				OrderExecuted: i.OrderExecuted,
+				Author:   i.Author,
+				Filename: i.Filename,
+				ID:       i.ID,
 			})
 		}
 	}

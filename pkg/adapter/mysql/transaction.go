@@ -25,7 +25,7 @@ func (t *Tx) Rollback() error {
 }
 
 // Exec will run a query on the database.
-func (t *Tx) Exec(query string, args ...interface{}) error {
-	_, err := t.db.Exec(query, args...)
+func (t *Tx) Exec(query string) error {
+	_, err := t.db.Exec(query)
 	return err
 }

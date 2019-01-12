@@ -130,10 +130,9 @@ func (m *MySQL) Changesets(reverse bool) ([]rove.Changeset, error) {
 	out := make([]rove.Changeset, 0)
 	for _, i := range results {
 		out = append(out, rove.Changeset{
-			Author:        i.Author,
-			Filename:      i.Filename,
-			ID:            i.ID,
-			OrderExecuted: i.OrderExecuted,
+			Author:   i.Author,
+			Filename: i.Filename,
+			ID:       i.ID,
 		})
 	}
 
