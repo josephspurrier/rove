@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/josephspurrier/rove/pkg/adapter/mysql"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql/testutil"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -13,11 +13,11 @@ import (
 
 func TestMigrationAll(t *testing.T) {
 	_, unique := migrateAll(t)
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func migrateAll(t *testing.T) (*sqlx.DB, string) {
-	db, unique := mysql.SetupDatabase()
+	db, unique := testutil.SetupDatabase()
 
 	// Set the arguments.
 	os.Args = []string{
@@ -34,7 +34,9 @@ func migrateAll(t *testing.T) (*sqlx.DB, string) {
 	os.Stdout = w
 
 	// Call the application.
+	testutil.SetEnv(unique)
 	main()
+	testutil.UnsetEnv(unique)
 
 	// Get the output.
 	w.Close()
@@ -42,19 +44,15 @@ func migrateAll(t *testing.T) (*sqlx.DB, string) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Changeset applied")
-
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
-	assert.Nil(t, err)
-	assert.Equal(t, 3, rows)
+	assert.Contains(t, string(out), "josephspurrier:1")
+	assert.Contains(t, string(out), "josephspurrier:2")
+	assert.Contains(t, string(out), "josephspurrier:3")
 
 	return db, unique
 }
 
 func TestMigrationReset(t *testing.T) {
-	db, unique := migrateAll(t)
+	_, unique := migrateAll(t)
 
 	// Set the arguments.
 	os.Args = []string{
@@ -71,7 +69,9 @@ func TestMigrationReset(t *testing.T) {
 	os.Stdout = w
 
 	// Call the application.
+	testutil.SetEnv(unique)
 	main()
+	testutil.UnsetEnv(unique)
 
 	// Get the output.
 	w.Close()
@@ -79,24 +79,20 @@ func TestMigrationReset(t *testing.T) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Rollback applied")
+	assert.Contains(t, string(out), "Rollback applied: josephspurrier:3")
+	assert.Contains(t, string(out), "Rollback applied: josephspurrier:2")
+	assert.Contains(t, string(out), "Rollback applied: josephspurrier:1")
 
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
-	assert.Nil(t, err)
-	assert.Equal(t, 0, rows)
-
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestMigrationUp(t *testing.T) {
 	_, unique := migrateUp(t)
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func migrateUp(t *testing.T) (*sqlx.DB, string) {
-	db, unique := mysql.SetupDatabase()
+	db, unique := testutil.SetupDatabase()
 
 	// Set the arguments.
 	os.Args = []string{
@@ -114,7 +110,9 @@ func migrateUp(t *testing.T) (*sqlx.DB, string) {
 	os.Stdout = w
 
 	// Call the application.
+	testutil.SetEnv(unique)
 	main()
+	testutil.UnsetEnv(unique)
 
 	// Get the output.
 	w.Close()
@@ -122,19 +120,14 @@ func migrateUp(t *testing.T) (*sqlx.DB, string) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Changeset applied")
-
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
-	assert.Nil(t, err)
-	assert.Equal(t, 2, rows)
+	assert.Contains(t, string(out), "Changeset applied: josephspurrier:1")
+	assert.Contains(t, string(out), "Changeset applied: josephspurrier:2")
 
 	return db, unique
 }
 
 func TestMigrationDown(t *testing.T) {
-	db, unique := migrateUp(t)
+	_, unique := migrateUp(t)
 
 	// Set the arguments.
 	os.Args = []string{
@@ -152,7 +145,9 @@ func TestMigrationDown(t *testing.T) {
 	os.Stdout = w
 
 	// Call the application.
+	testutil.SetEnv(unique)
 	main()
+	testutil.UnsetEnv(unique)
 
 	// Get the output.
 	w.Close()
@@ -160,13 +155,7 @@ func TestMigrationDown(t *testing.T) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Rollback applied")
+	assert.Contains(t, string(out), "Rollback applied: josephspurrier:2")
 
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, rows)
-
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }

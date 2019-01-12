@@ -1,4 +1,4 @@
-package mysql
+package testutil
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/env"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -22,7 +22,8 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func setEnv(unique string) {
+// SetEnv will set the environment variables.
+func SetEnv(unique string) {
 	os.Setenv(unique+"DB_HOSTNAME", "127.0.0.1")
 	os.Setenv(unique+"DB_PORT", "3306")
 	os.Setenv(unique+"DB_USERNAME", "root")
@@ -31,7 +32,8 @@ func setEnv(unique string) {
 	os.Setenv(unique+"DB_PARAMETER", "parseTime=true&allowNativePasswords=true&multiStatements=true")
 }
 
-func unsetEnv(unique string) {
+// UnsetEnv will unset the environment variables.
+func UnsetEnv(unique string) {
 	os.Unsetenv(unique + "DB_HOSTNAME")
 	os.Unsetenv(unique + "DB_PORT")
 	os.Unsetenv(unique + "DB_USERNAME")
@@ -40,13 +42,21 @@ func unsetEnv(unique string) {
 	os.Unsetenv(unique + "DB_PARAMETER")
 }
 
+// Connection returns the test connection.
+func Connection(unique string) *mysql.Connection {
+	return &mysql.Connection{
+		Hostname:  "127.0.0.1",
+		Port:      3306,
+		Username:  "root",
+		Password:  "",
+		Database:  TestDatabaseName + unique,
+		Parameter: "parseTime=true&allowNativePasswords=true&multiStatements=true",
+	}
+}
+
 // connectDatabase returns a test database connection.
 func connectDatabase(dbSpecificDB bool, unique string) *sqlx.DB {
-	dbc := new(Connection)
-	err := env.Unmarshal(dbc, unique)
-	if err != nil {
-		fmt.Println("DB ENV Error:", err)
-	}
+	dbc := Connection(unique)
 
 	connection, err := dbc.Connect(dbSpecificDB)
 	if err != nil {
@@ -60,7 +70,6 @@ func connectDatabase(dbSpecificDB bool, unique string) *sqlx.DB {
 // variables.
 func SetupDatabase() (*sqlx.DB, string) {
 	unique := "T" + fmt.Sprint(rand.Intn(500))
-	setEnv(unique)
 
 	db := connectDatabase(false, unique)
 	_, err := db.Exec(`DROP DATABASE IF EXISTS ` + TestDatabaseName + unique)
@@ -83,8 +92,6 @@ func TeardownDatabase(unique string) {
 	if err != nil {
 		fmt.Println("DB DROP TEARDOWN Error:", err)
 	}
-
-	unsetEnv(unique)
 }
 
 // LoadDatabaseFromFile will set up the DB for the tests.
@@ -97,14 +104,11 @@ func LoadDatabaseFromFile(file string, usePrefix bool) (*sqlx.DB, string) {
 	if usePrefix {
 		db, unique = SetupDatabase()
 		// Create a new MySQL database object.
-		m := new(MySQL)
-		m.DB = db
+		m, _ := mysql.New(Connection(unique))
 		r = rove.NewFileMigration(m, file)
 	} else {
-		m := new(MySQL)
-		m.DB = db
+		m, _ := mysql.New(Connection(unique))
 		r = rove.NewFileMigration(m, file)
-		setEnv(unique)
 		db = connectDatabase(false, unique)
 		_, err := db.Exec(`DROP DATABASE IF EXISTS ` + TestDatabaseName)
 		if err != nil {

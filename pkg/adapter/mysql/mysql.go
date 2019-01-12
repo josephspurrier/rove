@@ -10,13 +10,14 @@ import (
 )
 
 const (
-	sqlChangelog = `CREATE TABLE IF NOT EXISTS databasechangelog (
+	tableName   = "rovechangelog"
+	createQuery = `CREATE TABLE IF NOT EXISTS ` + tableName + ` (
 	id varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
 	author varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
 	filename varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
 	dateexecuted datetime NOT NULL,
 	orderexecuted int(11) NOT NULL,
-	md5sum varchar(35) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+	checksum varchar(35) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
 	description varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
 	tag varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
 	version varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
@@ -33,8 +34,9 @@ type dbchangeset struct {
 
 // MySQL is a MySQL database changelog.
 type MySQL struct {
-	DB        *sqlx.DB
-	tablename string
+	DB              *sqlx.DB
+	TableName       string
+	InitializeQuery string
 }
 
 // New connects to the database and returns an object that satisfies the
@@ -43,13 +45,18 @@ func New(c *Connection) (m *MySQL, err error) {
 	// Connect to the database.
 	m = new(MySQL)
 	m.DB, err = c.Connect(true)
+
+	// Set the default table and create query
+	m.TableName = tableName
+	m.InitializeQuery = createQuery
+
 	return m, err
 }
 
 // Initialize will create the changelog table or return an error.
 func (m *MySQL) Initialize() (err error) {
 	// Create the table.
-	_, err = m.DB.Exec(sqlChangelog)
+	_, err = m.DB.Exec(m.InitializeQuery)
 	if err != nil {
 		return err
 	}
@@ -61,8 +68,8 @@ func (m *MySQL) Initialize() (err error) {
 // error if there was an issue, or a blank checksum with no error if it's not
 // found.
 func (m *MySQL) ChangesetApplied(id, author, filename string) (checksum string, err error) {
-	err = m.DB.Get(&checksum, `SELECT md5sum
-	FROM databasechangelog
+	err = m.DB.Get(&checksum, `SELECT checksum
+	FROM `+m.TableName+`
 	WHERE id = ?
 	AND author = ?
 	AND filename = ?`, id, author, filename)
@@ -87,7 +94,7 @@ func (m *MySQL) BeginTx() (rove.Transaction, error) {
 
 // Count returns the number of changesets in the database.
 func (m *MySQL) Count() (count int, err error) {
-	err = m.DB.Get(&count, `SELECT COUNT(*) FROM databasechangelog`)
+	err = m.DB.Get(&count, `SELECT COUNT(*) FROM `+m.TableName)
 	if err != nil {
 		return 0, err
 	}
@@ -98,8 +105,8 @@ func (m *MySQL) Count() (count int, err error) {
 // Insert will insert a new record into the database.
 func (m *MySQL) Insert(id, author, filename string, count int, checksum, description, version string) error {
 	_, err := m.DB.Exec(`
-	INSERT INTO databasechangelog
-	(id,author,filename,dateexecuted,orderexecuted,md5sum,description,version)
+	INSERT INTO `+m.TableName+`
+	(id,author,filename,dateexecuted,orderexecuted,checksum,description,version)
 	VALUES(?,?,?,NOW(),?,?,?,?)`,
 		id, author, filename, count, checksum, description, version)
 	return err
@@ -116,7 +123,7 @@ func (m *MySQL) Changesets(reverse bool) ([]rove.Changeset, error) {
 	results := make([]dbchangeset, 0)
 	err := m.DB.Select(&results, `
 	SELECT id, author, filename, orderexecuted
-	FROM databasechangelog
+	FROM `+m.TableName+`
 	ORDER BY orderexecuted `+order)
 
 	// Copy from one struct to another.
@@ -137,7 +144,7 @@ func (m *MySQL) Changesets(reverse bool) ([]rove.Changeset, error) {
 func (m *MySQL) Delete(id, author, filename string) error {
 	// Delete the record.
 	_, err := m.DB.Exec(`
-	DELETE FROM databasechangelog
+	DELETE FROM `+m.TableName+`
 	WHERE id = ? AND author = ? AND filename = ? LIMIT 1`, id, author, filename)
 	return err
 }

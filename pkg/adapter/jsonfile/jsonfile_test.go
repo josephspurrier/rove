@@ -7,17 +7,19 @@ import (
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/adapter/jsonfile"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql/testutil"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFileMigration(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 	_ = os.Remove("test.json")
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
 	js, err := jsonfile.New("test.json", m)
 	assert.Nil(t, err)
 
@@ -70,16 +72,17 @@ func TestFileMigration(t *testing.T) {
 	assert.Equal(t, "josephspurrier:1", s)
 
 	_ = os.Remove("test.json")
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestMigrationFailDuplicate(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 	_ = os.Remove("test.json")
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
 	js, err := jsonfile.New("test.json", m)
 	assert.Nil(t, err)
 
@@ -97,16 +100,17 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	assert.Equal(t, "josephspurrier:2", s)
 
 	_ = os.Remove("test.json")
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestInclude(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 	_ = os.Remove("test.json")
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
 	js, err := jsonfile.New("test.json", m)
 	assert.Nil(t, err)
 
@@ -159,16 +163,17 @@ func TestInclude(t *testing.T) {
 	assert.Equal(t, "josephspurrier:1", s)
 
 	_ = os.Remove("test.json")
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestChangesetMigration(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 	_ = os.Remove("test.json")
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
 	js, err := jsonfile.New("test.json", m)
 	assert.Nil(t, err)
 
@@ -221,7 +226,7 @@ func TestChangesetMigration(t *testing.T) {
 	assert.Equal(t, "josephspurrier:1", s)
 
 	_ = os.Remove("test.json")
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 var sSuccess = `

@@ -5,30 +5,30 @@ import (
 
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql/testutil"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFileMigration(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
 
 	// Set up rove.
 	r := rove.NewFileMigration(m, "../testdata/success.sql")
 	r.Verbose = true
 
 	// Run migration.
-	err := r.Migrate(0)
+	err = r.Migrate(0)
 	assert.Nil(t, err)
 
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 3, rows)
+	assert.Equal(t, "josephspurrier:3", s)
 
 	// Run migration again.
 	err = r.Migrate(0)
@@ -38,10 +38,10 @@ func TestFileMigration(t *testing.T) {
 	err = r.Reset(0)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 0, rows)
+	assert.Equal(t, "", s)
 
 	// Remove all migrations again.
 	err = r.Reset(0)
@@ -51,71 +51,65 @@ func TestFileMigration(t *testing.T) {
 	err = r.Migrate(2)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 2, rows)
+	assert.Equal(t, "josephspurrier:2", s)
 
 	// Remove 1 migration.
 	err = r.Reset(1)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
-	assert.Nil(t, err)
-	assert.Equal(t, 1, rows)
-
 	// Show status of the migrations.
-	s, err := r.Status()
+	s, err = r.Status()
 	assert.Nil(t, err)
 	assert.Equal(t, "josephspurrier:1", s)
 
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestMigrationFailDuplicate(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
 
 	// Set up rove.
 	r := rove.NewFileMigration(m, "../testdata/fail-duplicate.sql")
 	r.Verbose = true
 
-	err := r.Migrate(0)
+	err = r.Migrate(0)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "checksum does not match")
 
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 2, rows)
+	assert.Equal(t, "josephspurrier:2", s)
 
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestInclude(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
 
 	// Set up rove.
 	r := rove.NewFileMigration(m, "../testdata/parent.sql")
 	r.Verbose = true
 
 	// Run migration.
-	err := r.Migrate(0)
+	err = r.Migrate(0)
 	assert.Nil(t, err)
 
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 3, rows)
+	assert.Equal(t, "josephspurrier:3", s)
 
 	// Run migration again.
 	err = r.Migrate(0)
@@ -125,10 +119,10 @@ func TestInclude(t *testing.T) {
 	err = r.Reset(0)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 0, rows)
+	assert.Equal(t, "", s)
 
 	// Remove all migrations again.
 	err = r.Reset(0)
@@ -138,43 +132,42 @@ func TestInclude(t *testing.T) {
 	err = r.Migrate(2)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 2, rows)
+	assert.Equal(t, "josephspurrier:2", s)
 
 	// Remove 1 migration.
 	err = r.Reset(1)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 1, rows)
+	assert.Equal(t, "josephspurrier:1", s)
 
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 func TestChangesetMigration(t *testing.T) {
-	db, unique := mysql.SetupDatabase()
+	_, unique := testutil.SetupDatabase()
 
 	// Create a new MySQL database object.
-	m := new(mysql.MySQL)
-	m.DB = db
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
 
 	// Set up rove.
 	r := rove.NewChangesetMigration(m, sSuccess)
 	r.Verbose = true
 
 	// Run migration.
-	err := r.Migrate(0)
+	err = r.Migrate(0)
 	assert.Nil(t, err)
 
-	// Count the records.
-	rows := 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 3, rows)
+	assert.Equal(t, "josephspurrier:3", s)
 
 	// Run migration again.
 	err = r.Migrate(0)
@@ -184,10 +177,10 @@ func TestChangesetMigration(t *testing.T) {
 	err = r.Reset(0)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 0, rows)
+	assert.Equal(t, "", s)
 
 	// Remove all migrations again.
 	err = r.Reset(0)
@@ -197,21 +190,21 @@ func TestChangesetMigration(t *testing.T) {
 	err = r.Migrate(2)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 2, rows)
+	assert.Equal(t, "josephspurrier:2", s)
 
 	// Remove 1 migration.
 	err = r.Reset(1)
 	assert.Nil(t, err)
 
-	rows = 0
-	err = db.Get(&rows, `SELECT count(*) from databasechangelog`)
+	// Get the status.
+	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, 1, rows)
+	assert.Equal(t, "josephspurrier:1", s)
 
-	mysql.TeardownDatabase(unique)
+	testutil.TeardownDatabase(unique)
 }
 
 var sSuccess = `
