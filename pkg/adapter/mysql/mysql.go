@@ -21,10 +21,10 @@ const (
 	filename varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
 	dateexecuted datetime NOT NULL,
 	orderexecuted int(11) NOT NULL,
-	checksum varchar(35) COLLATE utf8mb4_unicode_ci NOT NULL,
+	checksum char(32) COLLATE utf8mb4_unicode_ci NOT NULL,
 	description varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
 	tag varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL UNIQUE,
-	version varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
+	version varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 )
 
