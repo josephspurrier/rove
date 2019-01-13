@@ -32,6 +32,8 @@ const (
 var (
 	// ErrChangelogFailure occurs when the connection is not set up properly.
 	ErrChangelogFailure = errors.New("error with changelog setup")
+	// ErrTransactionFuncMissing occurs when the transaction function is missing.
+	ErrTransactionFuncMissing = errors.New("error transaction func is missing")
 )
 
 // dbchangeset contains a single database record change.
@@ -52,6 +54,7 @@ type MySQL struct {
 	DB              *sqlx.DB
 	TableName       string
 	InitializeQuery string
+	TransactionFunc func(tx *sql.Tx) rove.Transaction
 }
 
 // New connects to the database and returns an object that satisfies the
@@ -61,9 +64,12 @@ func New(c *Connection) (m *MySQL, err error) {
 	m = new(MySQL)
 	m.DB, err = c.Connect(true)
 
-	// Set the default table and create query
+	// Set the default table, create, and transaction.
 	m.TableName = tableName
 	m.InitializeQuery = createQuery
+	m.TransactionFunc = func(tx *sql.Tx) rove.Transaction {
+		return NewTx(tx)
+	}
 
 	return m, err
 }
@@ -131,14 +137,17 @@ func (m *MySQL) BeginTx() (rove.Transaction, error) {
 		return nil, ErrChangelogFailure
 	}
 
+	if m.TransactionFunc == nil {
+		return nil, ErrTransactionFuncMissing
+	}
+
 	// Begin a transaction.
 	t, err := m.DB.Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	tx := NewTx(t)
-	return tx, nil
+	return m.TransactionFunc(t), nil
 }
 
 // Count returns the number of changesets in the database.
