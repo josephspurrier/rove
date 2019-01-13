@@ -1,7 +1,7 @@
 language: go
 
 services:
-  - mysql:5.7
+  - mysql
 
 go:
   - "1.8"

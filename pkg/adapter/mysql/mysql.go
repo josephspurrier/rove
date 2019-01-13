@@ -16,14 +16,14 @@ import (
 const (
 	tableName   = "rovechangelog"
 	createQuery = `CREATE TABLE IF NOT EXISTS ` + tableName + ` (
-	id varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-	author varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-	filename varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+	id varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+	author varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+	filename varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
 	dateexecuted datetime NOT NULL,
 	orderexecuted int(11) NOT NULL,
 	checksum varchar(35) COLLATE utf8mb4_unicode_ci NOT NULL,
-	description varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-	tag varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL UNIQUE,
+	description varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+	tag varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL UNIQUE,
 	version varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 )
