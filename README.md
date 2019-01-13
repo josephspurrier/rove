@@ -218,10 +218,9 @@ err = r.Migrate(0)
 
 ## Adapters
 
-Rove is designed to be extensible via adapters. There are a few adapters built include in the standard package:
+Rove is designed to be extensible via adapters. There is one adapter included in the standard package:
 
 * mysql
-* jsonfile
 
 You may also create your own adapters - see the `interface.go` file for interfaces your adapters must satisfy.
 

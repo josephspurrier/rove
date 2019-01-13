@@ -10,6 +10,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestConnection(t *testing.T) {
+	c := mysql.Connection{}
+	c.Username = "root"
+	c.Password = "password"
+	c.Hostname = "localhost"
+	c.Port = 3306
+	c.Database = "test"
+	c.Parameter = "collation=utf8mb4_unicode_ci"
+
+	// Test with database.
+	dsn := c.DSN(true)
+	assert.Equal(t, "root:password@tcp(localhost:3306)/test?collation=utf8mb4_unicode_ci", dsn)
+
+	// Test without database.
+	dsn = c.DSN(false)
+	assert.Equal(t, "root:password@tcp(localhost:3306)/?collation=utf8mb4_unicode_ci", dsn)
+
+	// Test without database and parameters.
+	c.Parameter = ""
+	dsn = c.DSN(false)
+	assert.Equal(t, "root:password@tcp(localhost:3306)/", dsn)
+}
+
 func TestFileMigration(t *testing.T) {
 	_, unique := testutil.SetupDatabase()
 
@@ -18,7 +41,7 @@ func TestFileMigration(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set up rove.
-	r := rove.NewFileMigration(m, "../testdata/success.sql")
+	r := rove.NewFileMigration(m, "testdata/success.sql")
 	r.Verbose = true
 
 	// Run migration.
@@ -76,7 +99,7 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set up rove.
-	r := rove.NewFileMigration(m, "../testdata/fail-duplicate.sql")
+	r := rove.NewFileMigration(m, "testdata/fail-duplicate.sql")
 	r.Verbose = true
 
 	err = r.Migrate(0)
@@ -99,7 +122,7 @@ func TestInclude(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Set up rove.
-	r := rove.NewFileMigration(m, "../testdata/parent.sql")
+	r := rove.NewFileMigration(m, "testdata/parent.sql")
 	r.Verbose = true
 
 	// Run migration.

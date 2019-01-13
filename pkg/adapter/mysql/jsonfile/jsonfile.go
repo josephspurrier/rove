@@ -1,4 +1,6 @@
-// Package jsonfile is a JSON file changelog adapter.
+// Package jsonfile is a JSON file changelog adapter which stores migration
+// state in a JSON file instead of the database. This should only be used
+// as a reference.
 package jsonfile
 
 import (

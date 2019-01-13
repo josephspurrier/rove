@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/josephspurrier/rove"
-	"github.com/josephspurrier/rove/pkg/adapter/jsonfile"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
+	"github.com/josephspurrier/rove/pkg/adapter/mysql/jsonfile"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql/testutil"
 
 	"github.com/stretchr/testify/assert"

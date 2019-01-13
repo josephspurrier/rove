@@ -37,11 +37,11 @@ func NewConnection(prefix string) (*Connection, error) {
 // Connect to the database.
 func (c Connection) Connect(includeDatabase bool) (*sqlx.DB, error) {
 	// Connect to database and verify with a ping.
-	return sqlx.Connect("mysql", c.dsn(includeDatabase))
+	return sqlx.Connect("mysql", c.DSN(includeDatabase))
 }
 
 // DSN returns the Data Source Name.
-func (c Connection) dsn(includeDatabase bool) string {
+func (c Connection) DSN(includeDatabase bool) string {
 	// Get parameters.
 	param := c.Parameter
 
