@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-// Rollback will rollback a number of changesets back to a tag.
+// Rollback will rollback a number of changesets to a tag.
 func (r *Rove) Rollback(tag string) error {
 	if len(tag) == 0 {
 		return fmt.Errorf("error - rollback tag cannot be empty")

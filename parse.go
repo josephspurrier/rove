@@ -127,13 +127,14 @@ func parseReaderToMap(r io.Reader, filename string) (map[string]changeset.Record
 	return parseArrayToMap(arr)
 }
 
+// parseArrayToMap will convert an array of changesets to a map of changesets.
 func parseArrayToMap(arr []changeset.Record) (map[string]changeset.Record, error) {
 	m := make(map[string]changeset.Record)
 
 	for _, cs := range arr {
 		id := fmt.Sprintf("%v:%v:%v", cs.Author, cs.ID, cs.Filename)
 		if _, found := m[id]; found {
-			return nil, errors.New("Duplicate entry found: " + id)
+			return nil, errors.New("duplicate entry found: " + id)
 		}
 
 		m[id] = cs

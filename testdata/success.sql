@@ -1,4 +1,6 @@
 --changeset josephspurrier:1
+--description Create a user_status table.
+-- Standard comment.
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 CREATE TABLE user_status (
     id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -10,6 +10,133 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFileLoadFailure(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/success.sql")
+	r.Verbose = true
+
+	for v := range []error{
+		r.Migrate(0),
+		r.Reset(0),
+		r.Rollback("none"),
+		func() error {
+			_, err := r.Status()
+			return err
+		}(),
+		r.Tag("none"),
+	} {
+		assert.NotNil(t, v)
+	}
+}
+
+func TestFileLoadFailure2(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "not-exist")
+	r.Verbose = true
+
+	for v := range []error{
+		r.Migrate(0),
+		r.Reset(0),
+		r.Rollback("none"),
+		func() error {
+			_, err := r.Status()
+			return err
+		}(),
+		r.Tag("none"),
+	} {
+		assert.NotNil(t, v)
+	}
+}
+
+func TestStringLoadFailure(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewChangesetMigration(m, sFail)
+	r.Verbose = true
+
+	for v := range []error{
+		r.Migrate(0),
+		r.Reset(0),
+		r.Rollback("none"),
+		func() error {
+			_, err := r.Status()
+			return err
+		}(),
+		r.Tag("none"),
+	} {
+		assert.NotNil(t, v)
+	}
+}
+
+func TestLoadChangesetFailure(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/fail-duplicate.sql")
+	r.Verbose = true
+
+	for v := range []error{
+		r.Migrate(0),
+		r.Reset(0),
+		r.Rollback("none"),
+		func() error {
+			_, err := r.Status()
+			return err
+		}(),
+		r.Tag("none"),
+	} {
+		assert.NotNil(t, v)
+	}
+}
+
+func TestLoadChanglogFailure(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/success.sql")
+	r.Verbose = true
+
+	m.InitializeQuery = "INSERT bad query;"
+
+	for v := range []error{
+		r.Migrate(0),
+		r.Reset(0),
+		r.Rollback("none"),
+		func() error {
+			_, err := r.Status()
+			return err
+		}(),
+		r.Tag("none"),
+	} {
+		assert.NotNil(t, v)
+	}
+}
+
 func TestFileMigration(t *testing.T) {
 	_, unique := testutil.SetupDatabase()
 
@@ -156,6 +283,54 @@ func TestInclude(t *testing.T) {
 	testutil.TeardownDatabase(unique)
 }
 
+func TestFileBadQuery(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/badquery.sql")
+	r.Verbose = true
+
+	// Run migration.
+	err = r.Migrate(0)
+	assert.NotNil(t, err)
+}
+
+func TestFileBadSpace(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/badspace.sql")
+	r.Verbose = true
+
+	// Run migration.
+	err = r.Migrate(0)
+	assert.NotNil(t, err)
+}
+
+func TestFileMissingHeader(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/missingheader.sql")
+	r.Verbose = true
+
+	// Run migration.
+	err = r.Migrate(0)
+	assert.NotNil(t, err)
+}
+
 func TestChangesetMigration(t *testing.T) {
 	_, unique := testutil.SetupDatabase()
 
@@ -284,8 +459,16 @@ func TestChangesetTag(t *testing.T) {
 	err = r.Tag("jas1")
 	assert.NotNil(t, err)
 
+	// Attempt to tag with an empty string.
+	err = r.Tag("")
+	assert.NotNil(t, err)
+
 	// Attempt rollback to a tag that doesn't exist.
 	err = r.Rollback("not-exist")
+	assert.NotNil(t, err)
+
+	// Attempt rollback to an empty tag.
+	err = r.Rollback("")
 	assert.NotNil(t, err)
 
 	testutil.TeardownDatabase(unique)
@@ -293,6 +476,8 @@ func TestChangesetTag(t *testing.T) {
 
 var sSuccess = `
 --changeset josephspurrier:1
+--description Create a user_status table.
+-- Standard comment.
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 CREATE TABLE user_status (
     id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -335,3 +520,9 @@ CREATE TABLE user (
     PRIMARY KEY (id)
 );
 --rollback DROP TABLE user;`
+
+var sFail = `
+--description Create a user_status table.
+-- Standard comment.
+CREATE TABLE user_status (
+--rollback DROP TABLE user_status;`

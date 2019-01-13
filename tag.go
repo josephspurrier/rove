@@ -5,8 +5,12 @@ import (
 	"fmt"
 )
 
-// Tag will tag the latest changelog with a string to allow for rollbacks.
+// Tag will tag the latest changelog to allow for rollbacks to a tag.
 func (r *Rove) Tag(tag string) error {
+	if len(tag) == 0 {
+		return fmt.Errorf("error - tag cannot be empty")
+	}
+
 	// Get the changesets.
 	m, err := r.loadChangesets()
 	if err != nil {
@@ -20,10 +24,7 @@ func (r *Rove) Tag(tag string) error {
 	}
 
 	if len(results) == 0 {
-		if r.Verbose {
-			fmt.Println("No changesets to tag.")
-		}
-		return nil
+		return errors.New("no changesets to tag")
 	}
 
 	rs := results[0]
