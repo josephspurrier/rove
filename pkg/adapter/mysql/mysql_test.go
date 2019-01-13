@@ -29,3 +29,35 @@ func TestConnection(t *testing.T) {
 	dsn = c.DSN(false)
 	assert.Equal(t, "root:password@tcp(localhost:3306)/", dsn)
 }
+
+func TestErrors(t *testing.T) {
+	rr := new(mysql.MySQL)
+	for _, v := range []error{
+		rr.Initialize(),
+		func() error {
+			_, err := rr.ChangesetApplied("", "", "")
+			return err
+		}(),
+		func() error {
+			_, err := rr.BeginTx()
+			return err
+		}(),
+		func() error {
+			_, err := rr.Count()
+			return err
+		}(),
+		rr.Insert("", "", "", 0, "", "", ""),
+		func() error {
+			_, err := rr.Changesets(false)
+			return err
+		}(),
+		rr.Delete("", "", ""),
+		rr.Tag("", "", "", ""),
+		func() error {
+			_, err := rr.Rollback("")
+			return err
+		}(),
+	} {
+		assert.Equal(t, mysql.ErrChangelogFailure, v)
+	}
+}
