@@ -95,6 +95,9 @@ Commands:
   down <count> <file>
     Apply a specific number of rollbacks to the database.
 
+  tag <name> <file>
+    Apply a tag to the latest changeset in the database.
+
   status
     Output the list of migrations already applied to the database.
 ```

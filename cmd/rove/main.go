@@ -28,6 +28,10 @@ var (
 	cDBDownCount = cDBDown.Arg("count", "Number of rollbacks [int].").Required().Int()
 	cDBDownFile  = cDBDown.Arg("file", "Filename of the migration file [string].").Required().String()
 
+	cDBTag     = app.Command("tag", "Apply a tag to the latest changeset in the database.")
+	cDBTagName = cDBTag.Arg("name", "Name of the tag [string].").Required().String()
+	cDBTagFile = cDBTag.Arg("file", "Filename of the migration file [string].").Required().String()
+
 	cDBStatus = app.Command("status", "Output the list of migrations already applied to the database.")
 )
 
@@ -66,8 +70,12 @@ func main() {
 		r := rove.NewFileMigration(db, *cDBDownFile)
 		r.Verbose = true
 		err = r.Reset(*cDBDownCount)
+	case cDBTag.FullCommand():
+		r := rove.NewFileMigration(db, *cDBTagFile)
+		r.Verbose = true
+		err = r.Tag(*cDBTagName)
 	case cDBStatus.FullCommand():
-		r := rove.NewFileMigration(db, *cDBDownFile)
+		r := rove.NewFileMigration(db, "")
 		r.Verbose = true
 		_, err = r.Status()
 	}

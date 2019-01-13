@@ -147,3 +147,13 @@ func (m *MySQL) Delete(id, author, filename string) error {
 	WHERE id = ? AND author = ? AND filename = ? LIMIT 1`, id, author, filename)
 	return err
 }
+
+// Tag will add a tag to the record.
+func (m *MySQL) Tag(id, author, filename, tag string) error {
+	_, err := m.DB.Exec(`
+	UPDATE `+m.TableName+`
+	SET tag=?
+	WHERE id = ? AND author = ? AND filename = ? LIMIT 1`,
+		tag, id, author, filename)
+	return err
+}
