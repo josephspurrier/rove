@@ -2,12 +2,10 @@ package testutil
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"time"
 
-	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 
 	"github.com/jmoiron/sqlx"
@@ -92,40 +90,4 @@ func TeardownDatabase(unique string) {
 	if err != nil {
 		fmt.Println("DB DROP TEARDOWN Error:", err)
 	}
-}
-
-// LoadDatabaseFromFile will set up the DB for the tests.
-func LoadDatabaseFromFile(file string, usePrefix bool) (*sqlx.DB, string) {
-	unique := ""
-	var db *sqlx.DB
-
-	var r *rove.Rove
-
-	if usePrefix {
-		db, unique = SetupDatabase()
-		// Create a new MySQL database object.
-		m, _ := mysql.New(Connection(unique))
-		r = rove.NewFileMigration(m, file)
-	} else {
-		m, _ := mysql.New(Connection(unique))
-		r = rove.NewFileMigration(m, file)
-		db = connectDatabase(false, unique)
-		_, err := db.Exec(`DROP DATABASE IF EXISTS ` + TestDatabaseName)
-		if err != nil {
-			fmt.Println("DB DROP SETUP Error:", err)
-		}
-		_, err = db.Exec(`CREATE DATABASE ` + TestDatabaseName + ` DEFAULT CHARSET = utf8 COLLATE = utf8_unicode_ci`)
-		if err != nil {
-			fmt.Println("DB CREATE Error:", err)
-		}
-
-		db = connectDatabase(true, unique)
-	}
-
-	err := r.Migrate(0)
-	if err != nil {
-		log.Println("DB Error:", err)
-	}
-
-	return db, unique
 }
