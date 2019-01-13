@@ -7,14 +7,14 @@ import (
 
 // Reset will remove all migrations. If max is 0, all rollbacks are run.
 func (r *Rove) Reset(max int) error {
-	// Get the changesets.
-	m, err := r.loadChangesets()
+	// Get an array of changesets from the database.
+	results, err := r.db.Changesets(true)
 	if err != nil {
 		return err
 	}
 
-	// Get an array of changesets from the database.
-	results, err := r.db.Changesets(true)
+	// Get the changesets.
+	m, err := r.loadChangesets()
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,7 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -26,6 +27,11 @@ const (
 	tag varchar(191) COLLATE utf8mb4_unicode_ci DEFAULT NULL UNIQUE,
 	version varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+)
+
+var (
+	// ErrChangelogFailure occurs when the connection is not set up properly.
+	ErrChangelogFailure = errors.New("error with changelog setup")
 )
 
 // dbchangeset contains a single database record change.
@@ -64,6 +70,10 @@ func New(c *Connection) (m *MySQL, err error) {
 
 // Initialize will create the changelog table or return an error.
 func (m *MySQL) Initialize() (err error) {
+	if m.DB == nil {
+		return ErrChangelogFailure
+	}
+
 	// Create the table.
 	_, err = m.DB.Exec(m.InitializeQuery)
 	if err != nil {
@@ -97,6 +107,10 @@ func (m *MySQL) ToRecord(cs dbchangeset) *changeset.Record {
 // error if there was an issue, or nil with no error if it's not
 // found.
 func (m *MySQL) ChangesetApplied(id, author, filename string) (*changeset.Record, error) {
+	if m.DB == nil {
+		return nil, ErrChangelogFailure
+	}
+
 	var cs dbchangeset
 	err := m.DB.Get(&cs, `
 	SELECT * FROM `+m.TableName+`
@@ -113,6 +127,10 @@ func (m *MySQL) ChangesetApplied(id, author, filename string) (*changeset.Record
 
 // BeginTx starts a transaction.
 func (m *MySQL) BeginTx() (rove.Transaction, error) {
+	if m.DB == nil {
+		return nil, ErrChangelogFailure
+	}
+
 	// Begin a transaction.
 	t, err := m.DB.Begin()
 	if err != nil {
@@ -125,6 +143,10 @@ func (m *MySQL) BeginTx() (rove.Transaction, error) {
 
 // Count returns the number of changesets in the database.
 func (m *MySQL) Count() (count int, err error) {
+	if m.DB == nil {
+		return 0, ErrChangelogFailure
+	}
+
 	err = m.DB.Get(&count, `SELECT COUNT(*) FROM `+m.TableName)
 	if err != nil {
 		return 0, err
@@ -135,6 +157,10 @@ func (m *MySQL) Count() (count int, err error) {
 
 // Insert will insert a new record into the database.
 func (m *MySQL) Insert(id, author, filename string, count int, checksum, description, version string) error {
+	if m.DB == nil {
+		return ErrChangelogFailure
+	}
+
 	_, err := m.DB.Exec(`
 	INSERT INTO `+m.TableName+`
 	(id,author,filename,dateexecuted,orderexecuted,checksum,description,version)
@@ -146,6 +172,10 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 // Changesets returns a list of the changesets from the database in ascending
 // order (false) or descending order (true).
 func (m *MySQL) Changesets(reverse bool) ([]changeset.Record, error) {
+	if m.DB == nil {
+		return nil, ErrChangelogFailure
+	}
+
 	order := "ASC"
 	if reverse {
 		order = "DESC"
@@ -168,6 +198,10 @@ func (m *MySQL) Changesets(reverse bool) ([]changeset.Record, error) {
 
 // Delete will delete a changeset from the database.
 func (m *MySQL) Delete(id, author, filename string) error {
+	if m.DB == nil {
+		return ErrChangelogFailure
+	}
+
 	// Delete the record.
 	_, err := m.DB.Exec(`
 	DELETE FROM `+m.TableName+`
@@ -177,6 +211,10 @@ func (m *MySQL) Delete(id, author, filename string) error {
 
 // Tag will add a tag to the record.
 func (m *MySQL) Tag(id, author, filename, tag string) error {
+	if m.DB == nil {
+		return ErrChangelogFailure
+	}
+
 	_, err := m.DB.Exec(`
 	UPDATE `+m.TableName+`
 	SET tag=?
@@ -197,6 +235,10 @@ func (m *MySQL) Tag(id, author, filename, tag string) error {
 
 // Rollback return how many changesets to rollback.
 func (m *MySQL) Rollback(tag string) (int, error) {
+	if m.DB == nil {
+		return 0, ErrChangelogFailure
+	}
+
 	count := 0
 	err := m.DB.Get(&count, `
 	SELECT count(*) FROM `+m.TableName+`

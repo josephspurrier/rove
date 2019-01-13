@@ -11,14 +11,14 @@ func (r *Rove) Tag(tag string) error {
 		return fmt.Errorf("error - tag cannot be empty")
 	}
 
-	// Get the changesets.
-	m, err := r.loadChangesets()
+	// Get an array of changesets from the database.
+	results, err := r.db.Changesets(true)
 	if err != nil {
 		return err
 	}
 
-	// Get an array of changesets from the database.
-	results, err := r.db.Changesets(true)
+	// Get the changesets.
+	m, err := r.loadChangesets()
 	if err != nil {
 		return err
 	}
