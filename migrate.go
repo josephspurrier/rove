@@ -13,7 +13,7 @@ func (r *Rove) Migrate(max int) error {
 	// Create the object to store the changeset log.
 	err := r.db.Initialize()
 	if err != nil {
-		return err
+		return fmt.Errorf("error on changelog creation: %v", err)
 	}
 
 	arr := make([]changeset.Record, 0)
@@ -22,13 +22,13 @@ func (r *Rove) Migrate(max int) error {
 		// Get the changesets.
 		arr, err = parseFileToArray(r.file)
 		if err != nil {
-			return err
+			return fmt.Errorf("error parsing file: %v", err)
 		}
 	} else {
 		// Else use the changeset that was passed in.
 		arr, err = parseToArray(strings.NewReader(r.changeset), elementMemory)
 		if err != nil {
-			return err
+			return fmt.Errorf("error on parsing string: %v", err)
 		}
 	}
 
@@ -83,20 +83,20 @@ func (r *Rove) Migrate(max int) error {
 		// Count the number of rows.
 		count, err := r.db.Count()
 		if err != nil {
-			return err
+			return fmt.Errorf("error on counting changelog rows: %v", err)
 		}
 
 		// Insert the record.
 		err = r.db.Insert(cs.ID, cs.Author, cs.Filename, count+1, newChecksum,
 			cs.Description, cs.Version)
 		if err != nil {
-			return err
+			return fmt.Errorf("error on inserting changelog record: %v", err)
 		}
 
 		// Query back the record.
 		newRecord, err := r.db.ChangesetApplied(cs.ID, cs.Author, cs.Filename)
 		if err != nil {
-			return err
+			return fmt.Errorf("error on querying changelog record: %v", err)
 		}
 
 		if r.Verbose {
