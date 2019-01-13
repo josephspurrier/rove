@@ -98,6 +98,9 @@ Commands:
   tag <name> <file>
     Apply a tag to the latest changeset in the database.
 
+  rollback <name> <file>
+    Run all rollbacks until the specified tag on the database.
+
   status
     Output the list of migrations already applied to the database.
 ```

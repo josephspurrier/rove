@@ -1,5 +1,7 @@
 package rove
 
+import "github.com/josephspurrier/rove/pkg/changeset"
+
 // Changelog represents a list of operations for a changelog.
 type Changelog interface {
 	// Initialize should perform any work to set up the changelog or return an
@@ -10,9 +12,9 @@ type Changelog interface {
 	// ChangesetApplied should return the checksum from the changelog of a
 	// matching changeset, an error, or a blank string if the changeset doesn't
 	// exist in the changelog.
-	ChangesetApplied(id string, author string, filename string) (checksum string, err error)
+	ChangesetApplied(id string, author string, filename string) (record *changeset.Record, err error)
 	// Changesets should return a list of the changesets or return an error.
-	Changesets(reverse bool) ([]Changeset, error)
+	Changesets(reverse bool) ([]changeset.Record, error)
 	// Count should return the number of changesets in the changelog or return
 	// an error.
 	Count() (count int, err error)
@@ -23,6 +25,9 @@ type Changelog interface {
 	// Tag should add a tag to the latest changeset in the database or return
 	// an error.
 	Tag(id, author, filename, tag string) error
+	// Rollback should return the number of changests to remove to revert to the
+	// specified tag or return an error.
+	Rollback(tag string) (int, error)
 }
 
 // Transaction represents a changelog transaction.
@@ -34,11 +39,4 @@ type Transaction interface {
 	Rollback() error
 	// Exec should prepare to make a change to the changelog.
 	Exec(query string) error
-}
-
-// Changeset is a single changeset.
-type Changeset struct {
-	ID       string
-	Author   string
-	Filename string
 }

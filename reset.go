@@ -26,6 +26,10 @@ func (r *Rove) Reset(max int) error {
 		return nil
 	}
 
+	if r.Verbose {
+		fmt.Printf("Changesets rollback (request: %v):\n", max)
+	}
+
 	maxCounter := 0
 
 	// Loop through each changeset.
@@ -64,7 +68,7 @@ func (r *Rove) Reset(max int) error {
 		}
 
 		if r.Verbose {
-			fmt.Printf("Rollback applied: %v:%v\n", cs.Author, cs.ID)
+			fmt.Printf("Applied: %v\n", rs.String())
 		}
 
 		// Only perform the maxium number of changes based on the max value.

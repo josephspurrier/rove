@@ -79,9 +79,9 @@ func TestMigrationReset(t *testing.T) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Rollback applied: josephspurrier:3")
-	assert.Contains(t, string(out), "Rollback applied: josephspurrier:2")
-	assert.Contains(t, string(out), "Rollback applied: josephspurrier:1")
+	assert.Contains(t, string(out), "Applied: 3) josephspurrier:3 (success.sql) 57cc0b1c45cb72032bcaed07483d243d [tag='']")
+	assert.Contains(t, string(out), "Applied: 2) josephspurrier:2 (success.sql) 3f81b08751b27ff6680b287e08ea112a [tag='']")
+	assert.Contains(t, string(out), "Applied: 1) josephspurrier:1 (success.sql) f0685b81bd072358e0ea0cd0750b544a [tag='']")
 
 	testutil.TeardownDatabase(unique)
 }
@@ -120,8 +120,8 @@ func migrateUp(t *testing.T) (*sqlx.DB, string) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Changeset applied: josephspurrier:1")
-	assert.Contains(t, string(out), "Changeset applied: josephspurrier:2")
+	assert.Contains(t, string(out), "Applied: 1) josephspurrier:1 (success.sql) f0685b81bd072358e0ea0cd0750b544a [tag='']")
+	assert.Contains(t, string(out), "Applied: 2) josephspurrier:2 (success.sql) 3f81b08751b27ff6680b287e08ea112a [tag='']")
 
 	return db, unique
 }
@@ -155,7 +155,7 @@ func TestMigrationDown(t *testing.T) {
 	assert.Nil(t, err)
 	os.Stdout = backupd
 
-	assert.Contains(t, string(out), "Rollback applied: josephspurrier:2")
+	assert.Contains(t, string(out), "Applied: 2) josephspurrier:2 (success.sql) 3f81b08751b27ff6680b287e08ea112a [tag='']")
 
 	testutil.TeardownDatabase(unique)
 }

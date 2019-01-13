@@ -32,27 +32,30 @@ func (r *Rove) Migrate(max int) error {
 		}
 	}
 
+	if r.Verbose {
+		fmt.Printf("Changesets applied (request: %v):\n", max)
+	}
+
 	maxCounter := 0
 
 	// Loop through each changeset.
 	for _, cs := range arr {
-		checksum := ""
-		newChecksum := cs.Checksum()
+		newChecksum := cs.GenerateChecksum()
 
 		// Determine if the changeset was already applied.
 		// Count the number of rows.
-		checksum, err = r.db.ChangesetApplied(cs.ID, cs.Author, cs.Filename)
+		record, err := r.db.ChangesetApplied(cs.ID, cs.Author, cs.Filename)
 		if err != nil {
 			return fmt.Errorf("internal error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
-		} else if checksum != "" {
+		} else if record != nil {
 			// Determine if the checksums match.
-			if checksum != newChecksum {
+			if record.Checksum != newChecksum {
 				return fmt.Errorf("checksum does not match - existing changeset %v:%v has checksum %v, but new changeset has checksum %v",
-					cs.Author, cs.ID, checksum, newChecksum)
+					cs.Author, cs.ID, record.Checksum, newChecksum)
 			}
 
 			if r.Verbose {
-				fmt.Printf("Changeset already applied: %v:%v\n", cs.Author, cs.ID)
+				fmt.Printf("Already applied: %v\n", record.String())
 			}
 			continue
 		}
@@ -85,13 +88,19 @@ func (r *Rove) Migrate(max int) error {
 
 		// Insert the record.
 		err = r.db.Insert(cs.ID, cs.Author, cs.Filename, count+1, newChecksum,
-			cs.Descriptions(), cs.Version)
+			cs.Description, cs.Version)
+		if err != nil {
+			return err
+		}
+
+		// Query back the record.
+		newRecord, err := r.db.ChangesetApplied(cs.ID, cs.Author, cs.Filename)
 		if err != nil {
 			return err
 		}
 
 		if r.Verbose {
-			fmt.Printf("Changeset applied: %v:%v\n", cs.Author, cs.ID)
+			fmt.Printf("Applied: %v\n", newRecord.String())
 		}
 
 		// Only perform the maxium number of changes based on the max value.

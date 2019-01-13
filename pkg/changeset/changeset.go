@@ -3,7 +3,9 @@ package changeset
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 )
 
 var (
@@ -13,15 +15,18 @@ var (
 
 // Record is a changeset.
 type Record struct {
-	ID       string
-	Author   string
-	Filename string
-	MD5      string
-	Version  string
+	ID            string
+	Author        string
+	Filename      string
+	DateExecuted  time.Time
+	OrderExecuted int
+	Checksum      string
+	Description   string
+	Tag           string
+	Version       string
 
-	change      []string
-	rollback    []string
-	description []string
+	change   []string
+	rollback []string
 }
 
 // ParseHeader will parse the header information.
@@ -51,12 +56,12 @@ func (cs *Record) AddRollback(line string) {
 	cs.rollback = append(cs.rollback, line)
 }
 
-// AddDescription will add a description command.
+// AddDescription will add a description.
 func (cs *Record) AddDescription(line string) {
-	if len(cs.description) == 0 {
-		cs.description = make([]string, 0)
-	}
-	cs.description = append(cs.description, line)
+	cs.Description = strings.Join([]string{
+		cs.Description,
+		line,
+	}, "\n")
 }
 
 // AddChange will add a change command.
@@ -77,12 +82,13 @@ func (cs *Record) Rollbacks() string {
 	return strings.Join(cs.rollback, "\n")
 }
 
-// Descriptions will return the descriptions.
-func (cs *Record) Descriptions() string {
-	return strings.Join(cs.description, "\n")
+// GenerateChecksum returns an MD5 checksum for the changeset.
+func (cs *Record) GenerateChecksum() string {
+	return md5sum(cs.Changes())
 }
 
-// Checksum returns an MD5 checksum for the changeset.
-func (cs *Record) Checksum() string {
-	return md5sum(cs.Changes())
+// String returns a display of the changeset.
+func (cs *Record) String() string {
+	return fmt.Sprintf("%v) %v:%v (%v) %v [tag='%v']", cs.OrderExecuted,
+		cs.Author, cs.ID, cs.Filename, cs.Checksum, cs.Tag)
 }

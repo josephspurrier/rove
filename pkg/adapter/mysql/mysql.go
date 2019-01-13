@@ -3,8 +3,12 @@ package mysql
 
 import (
 	"database/sql"
+	"fmt"
+	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/josephspurrier/rove"
+	"github.com/josephspurrier/rove/pkg/changeset"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -17,19 +21,24 @@ const (
 	filename varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
 	dateexecuted datetime NOT NULL,
 	orderexecuted int(11) NOT NULL,
-	checksum varchar(35) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-	description varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-	tag varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-	version varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+	checksum varchar(35) COLLATE utf8mb4_unicode_ci NOT NULL,
+	description varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+	tag varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL UNIQUE,
+	version varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 )
 
 // dbchangeset contains a single database record change.
 type dbchangeset struct {
-	ID            string `db:"id"`
-	Author        string `db:"author"`
-	Filename      string `db:"filename"`
-	OrderExecuted int    `db:"orderexecuted"`
+	ID            string    `db:"id"`
+	Author        string    `db:"author"`
+	Filename      string    `db:"filename"`
+	DateExecuted  time.Time `db:"dateexecuted"`
+	OrderExecuted int       `db:"orderexecuted"`
+	Checksum      string    `db:"checksum"`
+	Description   string    `db:"description"`
+	Tag           *string   `db:"tag"`
+	Version       string    `db:"version"`
 }
 
 // MySQL is a MySQL database changelog.
@@ -64,20 +73,42 @@ func (m *MySQL) Initialize() (err error) {
 	return nil
 }
 
+// ToRecord converts a dbchangeset to a changeset.Record.
+func (m *MySQL) ToRecord(cs dbchangeset) *changeset.Record {
+	tag := ""
+	if cs.Tag != nil {
+		tag = *cs.Tag
+	}
+
+	return &changeset.Record{
+		ID:            cs.ID,
+		Author:        cs.Author,
+		Filename:      cs.Filename,
+		DateExecuted:  cs.DateExecuted,
+		OrderExecuted: cs.OrderExecuted,
+		Checksum:      cs.Checksum,
+		Description:   cs.Description,
+		Tag:           tag,
+		Version:       cs.Version,
+	}
+}
+
 // ChangesetApplied returns the checksum from the database if it's found, an
-// error if there was an issue, or a blank checksum with no error if it's not
+// error if there was an issue, or nil with no error if it's not
 // found.
-func (m *MySQL) ChangesetApplied(id, author, filename string) (checksum string, err error) {
-	err = m.DB.Get(&checksum, `SELECT checksum
-	FROM `+m.TableName+`
+func (m *MySQL) ChangesetApplied(id, author, filename string) (*changeset.Record, error) {
+	var cs dbchangeset
+	err := m.DB.Get(&cs, `
+	SELECT * FROM `+m.TableName+`
 	WHERE id = ?
 	AND author = ?
 	AND filename = ?`, id, author, filename)
 
 	if err == sql.ErrNoRows {
-		return "", nil
+		return nil, nil
 	}
-	return checksum, err
+
+	return m.ToRecord(cs), err
 }
 
 // BeginTx starts a transaction.
@@ -114,7 +145,7 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 
 // Changesets returns a list of the changesets from the database in ascending
 // order (false) or descending order (true).
-func (m *MySQL) Changesets(reverse bool) ([]rove.Changeset, error) {
+func (m *MySQL) Changesets(reverse bool) ([]changeset.Record, error) {
 	order := "ASC"
 	if reverse {
 		order = "DESC"
@@ -122,18 +153,14 @@ func (m *MySQL) Changesets(reverse bool) ([]rove.Changeset, error) {
 
 	results := make([]dbchangeset, 0)
 	err := m.DB.Select(&results, `
-	SELECT id, author, filename, orderexecuted
+	SELECT *
 	FROM `+m.TableName+`
 	ORDER BY orderexecuted `+order)
 
 	// Copy from one struct to another.
-	out := make([]rove.Changeset, 0)
+	out := make([]changeset.Record, 0)
 	for _, i := range results {
-		out = append(out, rove.Changeset{
-			Author:   i.Author,
-			Filename: i.Filename,
-			ID:       i.ID,
-		})
+		out = append(out, *m.ToRecord(i))
 	}
 
 	return out, err
@@ -155,5 +182,31 @@ func (m *MySQL) Tag(id, author, filename, tag string) error {
 	SET tag=?
 	WHERE id = ? AND author = ? AND filename = ? LIMIT 1`,
 		tag, id, author, filename)
+
+	me, ok := err.(*mysql.MySQLError)
+	if !ok {
+		return err
+	}
+
+	if me.Number == 1062 {
+		return fmt.Errorf("tag already found in database: %v", tag)
+	}
+
 	return err
+}
+
+// Rollback return how many changesets to rollback.
+func (m *MySQL) Rollback(tag string) (int, error) {
+	count := 0
+	err := m.DB.Get(&count, `
+	SELECT count(*) FROM `+m.TableName+`
+	WHERE id > (
+		SELECT id FROM `+m.TableName+` WHERE tag = ?
+	)`, tag)
+
+	if count == 0 {
+		return 0, fmt.Errorf("tag not found in database or no rollbacks to perform: %v", tag)
+	}
+
+	return count, err
 }

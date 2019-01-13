@@ -51,7 +51,8 @@ func TestFileMigration(t *testing.T) {
 	// Get the status.
 	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:3", s)
+	assert.Equal(t, "3", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	// Run migration again.
 	err = r.Migrate(0)
@@ -64,7 +65,7 @@ func TestFileMigration(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "", s)
+	assert.Nil(t, s)
 
 	// Remove all migrations again.
 	err = r.Reset(0)
@@ -77,7 +78,8 @@ func TestFileMigration(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:2", s)
+	assert.Equal(t, "2", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	// Remove 1 migration.
 	err = r.Reset(1)
@@ -86,7 +88,8 @@ func TestFileMigration(t *testing.T) {
 	// Show status of the migrations.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:1", s)
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	testutil.TeardownDatabase(unique)
 }
@@ -109,7 +112,8 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	// Get the status.
 	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:2", s)
+	assert.Equal(t, "2", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	testutil.TeardownDatabase(unique)
 }
@@ -132,7 +136,8 @@ func TestInclude(t *testing.T) {
 	// Get the status.
 	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:3", s)
+	assert.Equal(t, "3", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	// Run migration again.
 	err = r.Migrate(0)
@@ -145,7 +150,7 @@ func TestInclude(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "", s)
+	assert.Nil(t, s)
 
 	// Remove all migrations again.
 	err = r.Reset(0)
@@ -158,7 +163,8 @@ func TestInclude(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:2", s)
+	assert.Equal(t, "2", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	// Remove 1 migration.
 	err = r.Reset(1)
@@ -167,7 +173,8 @@ func TestInclude(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:1", s)
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	testutil.TeardownDatabase(unique)
 }
@@ -190,7 +197,8 @@ func TestChangesetMigration(t *testing.T) {
 	// Get the status.
 	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:3", s)
+	assert.Equal(t, "3", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	// Run migration again.
 	err = r.Migrate(0)
@@ -203,7 +211,7 @@ func TestChangesetMigration(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "", s)
+	assert.Nil(t, s)
 
 	// Remove all migrations again.
 	err = r.Reset(0)
@@ -216,7 +224,8 @@ func TestChangesetMigration(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:2", s)
+	assert.Equal(t, "2", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
 
 	// Remove 1 migration.
 	err = r.Reset(1)
@@ -225,7 +234,82 @@ func TestChangesetMigration(t *testing.T) {
 	// Get the status.
 	s, err = r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "josephspurrier:1", s)
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
+
+	testutil.TeardownDatabase(unique)
+}
+
+func TestChangesetTag(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewChangesetMigration(m, sSuccess)
+	r.Verbose = true
+
+	// Run migration.
+	err = r.Migrate(1)
+	assert.Nil(t, err)
+
+	// Tag the migration.
+	err = r.Tag("jas1")
+	assert.Nil(t, err)
+
+	// Get the status.
+	s, err := r.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
+	assert.Equal(t, "jas1", s.Tag)
+
+	// Run migration again.
+	err = r.Migrate(1)
+	assert.Nil(t, err)
+
+	// Get the status.
+	s, err = r.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, "2", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
+	assert.Equal(t, "", s.Tag)
+
+	// Rollback to the tag.
+	err = r.Rollback("jas1")
+	assert.Nil(t, err)
+
+	// Get the status.
+	s, err = r.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
+	assert.Equal(t, "jas1", s.Tag)
+
+	// Attempt rollback again.
+	err = r.Rollback("jas1")
+	assert.NotNil(t, err)
+
+	// Get the status.
+	s, err = r.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, "1", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
+	assert.Equal(t, "jas1", s.Tag)
+
+	// Run migration again.
+	err = r.Migrate(1)
+	assert.Nil(t, err)
+
+	// Attempt to tag with the same tag.
+	err = r.Tag("jas1")
+	assert.NotNil(t, err)
+
+	// Attempt rollback to a tag that doesn't exist.
+	err = r.Rollback("not-exist")
+	assert.NotNil(t, err)
 
 	testutil.TeardownDatabase(unique)
 }

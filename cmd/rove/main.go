@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
@@ -32,6 +33,10 @@ var (
 	cDBTagName = cDBTag.Arg("name", "Name of the tag [string].").Required().String()
 	cDBTagFile = cDBTag.Arg("file", "Filename of the migration file [string].").Required().String()
 
+	cDBRollback     = app.Command("rollback", "Run all rollbacks until the specified tag on the database.")
+	cDBRollbackName = cDBRollback.Arg("name", "Name of the tag [string].").Required().String()
+	cDBRollbackFile = cDBRollback.Arg("file", "Filename of the migration file [string].").Required().String()
+
 	cDBStatus = app.Command("status", "Output the list of migrations already applied to the database.")
 )
 
@@ -44,6 +49,16 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	// Add parseTime parameter if it's not included to parse times properly
+	// in MySQL.
+	if !strings.Contains(conn.Parameter, "parseTime") {
+		if conn.Parameter == "" {
+			conn.Parameter = "parseTime=true"
+		} else {
+			conn.Parameter += "&parseTime=true"
+		}
 	}
 
 	// Create a new MySQL database object.
@@ -74,6 +89,10 @@ func main() {
 		r := rove.NewFileMigration(db, *cDBTagFile)
 		r.Verbose = true
 		err = r.Tag(*cDBTagName)
+	case cDBRollback.FullCommand():
+		r := rove.NewFileMigration(db, *cDBRollbackFile)
+		r.Verbose = true
+		err = r.Rollback(*cDBRollbackName)
 	case cDBStatus.FullCommand():
 		r := rove.NewFileMigration(db, "")
 		r.Verbose = true
