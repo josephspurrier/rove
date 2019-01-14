@@ -2,12 +2,16 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/josephspurrier/rove)](https://goreportcard.com/report/github.com/josephspurrier/rove)
 [![Build Status](https://travis-ci.org/josephspurrier/rove.svg)](https://travis-ci.org/josephspurrier/rove)
-[![Coverage Status](https://coveralls.io/repos/github/josephspurrier/rove/badge.svg?branch=master&timestamp=20180923-01)](https://coveralls.io/github/josephspurrier/rove?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/josephspurrier/rove/badge.svg?branch=master&timestamp=20190113-01)](https://coveralls.io/github/josephspurrier/rove?branch=master)
 [![GoDoc](https://godoc.org/github.com/josephspurrier/rove?status.svg)](https://godoc.org/github.com/josephspurrier/rove)
 
 ## MySQL Database Migration Tool Based on Liquibase
 
-This project is based off Liquibase, the database migration tool. It uses a slimmed down version of the DATABASECHANGELOG database table to store the applied changesets. It only supports SQL (no XML) migrations currently. For the most part, you can take your existing SQL migration files and use them with this tool. You can also import this package into your application and apply changesets without having to store the migrations on physical files. This allows you manage DB migrations inside of your application so you can distribute single binary applications.
+This project is inspired by Liquibase, the database migration tool.
+
+Database migrations help you modify a database between application upgrades. If your application needs a new table or a table modified, you can have your application make the change or you can use a tool to perform the migrations for you. You want to ensure you apply the migrations consistently so you don't put the database into a bad state. A good way manage the migration process is to track the state of the database. When using the MySQL adapter with Rove, a table called `rovechangelog` is created in the database to track which migrations have been applied. When you perform an update to your database, Rove will perform a few things for you. First, the tool will ensure no changes have been made to the changesets already applied to the database.
+
+It uses a slimmed down version of the DATABASECHANGELOG database table to store the applied changesets. It only supports SQL (no XML) migrations currently. For the most part, you can take your existing SQL migration files and use them with this tool. You can also import this package into your application and apply changesets without having to store the migrations on physical files. This allows you manage DB migrations inside of your application so you can distribute single binary applications.
 
 **Note:** Do not run this tool on a database that already has Liquibase migrations applied - they are not compatible because the checksums are calculated is different. The DATABASECHANGELOG database table which is used for storing the changesets is also different.
 

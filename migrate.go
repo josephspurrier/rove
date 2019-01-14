@@ -16,7 +16,8 @@ func (r *Rove) Migrate(max int) error {
 		return fmt.Errorf("error on changelog creation: %v", err)
 	}
 
-	arr := make([]changeset.Record, 0)
+	var arr []changeset.Record
+
 	// If a file is specified, use it to build the array.
 	if len(r.file) > 0 {
 		// Get the changesets.

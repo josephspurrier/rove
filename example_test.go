@@ -37,7 +37,7 @@ INSERT INTO user_status (id, status, created_at, updated_at, deleted) VALUES
 		Password:  "password",
 		Database:  "main",
 		Port:      3306,
-		Parameter: "collation=utf8mb4_unicode_ci&parseTime=true",
+		Parameter: "collation=utf8mb4_unicode_ci&parseTime=true&multiStatements=true",
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -46,5 +46,5 @@ INSERT INTO user_status (id, status, created_at, updated_at, deleted) VALUES
 	// Perform all migrations against the database.
 	r := rove.NewChangesetMigration(db, changesets)
 	r.Verbose = true
-	err = r.Migrate(0)
+	r.Migrate(0)
 }
