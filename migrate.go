@@ -3,6 +3,7 @@ package rove
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/josephspurrier/rove/pkg/changeset"
 )
@@ -49,14 +50,35 @@ func (r *Rove) Migrate(max int) error {
 		if err != nil {
 			return fmt.Errorf("internal error on changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
 		} else if record != nil {
+			comment := ""
+
 			// Determine if the checksums match.
 			if record.Checksum != newChecksum {
-				return fmt.Errorf("checksum does not match - existing changeset %v:%v has checksum %v, but new changeset has checksum %v",
-					cs.Author, cs.ID, record.Checksum, newChecksum)
+				if r.Checksum == ChecksumThrowError {
+					return fmt.Errorf("checksum does not match - existing changeset %v:%v has checksum %v, but new changeset has checksum %v",
+						cs.Author, cs.ID, record.Checksum, newChecksum)
+				} else if r.Checksum == ChecksumIgnore {
+					// Ignore.
+					comment = fmt.Sprintf("Ignoring checksum (%v), should be (%v)\n", record.Checksum, newChecksum)
+				} else if r.Checksum == ChecksumUpdate {
+					// Update the checksum.
+					err = r.db.Update(record.ID, record.Author, record.Filename,
+						record.DateExecuted, record.OrderExecuted, newChecksum,
+						record.Description, record.Version)
+					if err != nil {
+						return fmt.Errorf("internal error on updating changeset %v:%v - %v", cs.Author, cs.ID, err.Error())
+
+					}
+					comment = fmt.Sprintf("Updated checksum from (%v) to (%v)\n", record.Checksum, newChecksum)
+
+				}
 			}
 
 			if r.Verbose {
 				fmt.Printf("Already applied: %v\n", record.String())
+				if len(comment) > 0 {
+					fmt.Printf("%v", comment)
+				}
 			}
 			continue
 		}
@@ -88,8 +110,8 @@ func (r *Rove) Migrate(max int) error {
 		}
 
 		// Insert the record.
-		err = r.db.Insert(cs.ID, cs.Author, cs.Filename, count+1, newChecksum,
-			cs.Description, cs.Version)
+		err = r.db.Insert(cs.ID, cs.Author, cs.Filename, time.Now(), count+1,
+			newChecksum, cs.Description, cs.Version)
 		if err != nil {
 			return fmt.Errorf("error on inserting changelog record: %v", err)
 		}
@@ -104,7 +126,7 @@ func (r *Rove) Migrate(max int) error {
 			fmt.Printf("Applied: %v\n", newRecord.String())
 		}
 
-		// Only perform the maxium number of changes based on the max value.
+		// Only perform the maximum number of changes based on the max value.
 		maxCounter++
 		if max != 0 && maxCounter >= max {
 			break

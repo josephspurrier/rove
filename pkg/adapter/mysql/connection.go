@@ -15,7 +15,7 @@ type Connection struct {
 	Port      int    `json:"Port" env:"DB_PORT"`
 	Username  string `json:"Username" env:"DB_USERNAME"`
 	Password  string `json:"Password" env:"DB_PASSWORD"`
-	Database  string `json:"Database" env:"DB_DATABASE"`
+	Name      string `json:"Database" env:"DB_NAME"`
 	Parameter string `json:"Parameter" env:"DB_PARAMETER"`
 }
 
@@ -60,7 +60,7 @@ func (c Connection) DSN(includeDatabase bool) string {
 		// Example:
 		// root:password@tcp(localhost:3306)/?collation=utf8mb4_unicode_ci
 		s = fmt.Sprintf("%v:%v@tcp(%v:%d)/%v%v", c.Username, c.Password,
-			c.Hostname, c.Port, c.Database, param)
+			c.Hostname, c.Port, c.Name, param)
 	}
 
 	return s

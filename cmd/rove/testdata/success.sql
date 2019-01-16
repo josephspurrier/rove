@@ -1,15 +1,14 @@
 --changeset josephspurrier:1
 --description Create the user status table.
---description Ensure to set the auto value on zero.
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+--description Set deleted_at as a timestamp.
 CREATE TABLE user_status (
     id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,
     
     status VARCHAR(25) NOT NULL,
     
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     
     PRIMARY KEY (id)
 );
@@ -22,7 +21,6 @@ INSERT INTO `user_status` (`id`, `status`, `created_at`, `updated_at`, `deleted`
 --rollback TRUNCATE TABLE user_status;
 
 --changeset josephspurrier:3
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 CREATE TABLE user (
     id VARCHAR(36) NOT NULL,
     
@@ -33,9 +31,9 @@ CREATE TABLE user (
     
     status_id TINYINT(1) UNSIGNED NOT NULL DEFAULT 1,
     
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP DEFAULT 0,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     
     UNIQUE KEY (email),
     CONSTRAINT `f_user_status` FOREIGN KEY (`status_id`) REFERENCES `user_status` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,

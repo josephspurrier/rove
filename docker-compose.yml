@@ -7,7 +7,7 @@ services:
       - DB_HOSTNAME=db
       - DB_PORT=3306
       - DB_USERNAME=root
-      - DB_DATABASE=webapi
+      - DB_NAME=webapi
       - DB_CHARSET=utf8mb4
       - DB_COLLATION=utf8mb4_unicode_ci
       - DB_PARAMETER=parseTime=true&allowNativePasswords=true

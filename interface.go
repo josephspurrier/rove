@@ -1,6 +1,10 @@
 package rove
 
-import "github.com/josephspurrier/rove/pkg/changeset"
+import (
+	"time"
+
+	"github.com/josephspurrier/rove/pkg/changeset"
+)
 
 // Changelog represents a list of operations for a changelog.
 type Changelog interface {
@@ -19,7 +23,11 @@ type Changelog interface {
 	// an error.
 	Count() (count int, err error)
 	// Insert should add a new changeset to the changelog or return an error.
-	Insert(id, author, filename string, count int, checksum, description, version string) error
+	Insert(id, author, filename string, dateexecuted time.Time, count int,
+		checksum, description, version string) error
+	// Update should update a changeset in the changelog or return an error.
+	Update(id, author, filename string, dateexecuted time.Time, count int,
+		checksum, description, version string) error
 	// Delete should remove the changeset from the changelog or return an error.
 	Delete(id, author, filename string) error
 	// Tag should add a tag to the latest changeset in the database or return

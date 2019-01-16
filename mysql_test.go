@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/josephspurrier/rove"
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
@@ -231,13 +232,63 @@ func TestMigrationFailDuplicate(t *testing.T) {
 
 	err = r.Migrate(0)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "checksum does not match")
+	assert.Contains(t, err.Error(), "duplicate entry found")
 
 	// Get the status.
 	s, err := r.Status()
 	assert.Nil(t, err)
 	assert.Equal(t, "2", s.ID)
 	assert.Equal(t, "josephspurrier", s.Author)
+
+	testutil.TeardownDatabase(unique)
+}
+
+func TestMigrationFailChecksum(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/success.sql")
+	r.Verbose = true
+
+	// Perform all migrations.
+	err = r.Migrate(0)
+	assert.Nil(t, err)
+
+	// Change a checksum.
+	err = m.Update("1", "josephspurrier", "success.sql", time.Now(), 1,
+		"bad", "description", "version")
+	assert.Nil(t, err)
+
+	// Migrate and throw error.
+	r.Checksum = rove.ChecksumThrowError
+	err = r.Migrate(0)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "checksum does not match")
+
+	// Migrate and ignore error.
+	r.Checksum = rove.ChecksumIgnore
+	err = r.Migrate(0)
+	assert.Nil(t, err)
+
+	// Migrate and throw error.
+	r.Checksum = rove.ChecksumThrowError
+	err = r.Migrate(0)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "checksum does not match")
+
+	// Migrate and update checksum.
+	r.Checksum = rove.ChecksumUpdate
+	err = r.Migrate(0)
+	assert.Nil(t, err)
+
+	// Migrate and no longer throw an error.
+	r.Checksum = rove.ChecksumThrowError
+	err = r.Migrate(0)
+	assert.Nil(t, err)
 
 	testutil.TeardownDatabase(unique)
 }

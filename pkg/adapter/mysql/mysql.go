@@ -165,7 +165,8 @@ func (m *MySQL) Count() (count int, err error) {
 }
 
 // Insert will insert a new record into the database.
-func (m *MySQL) Insert(id, author, filename string, count int, checksum, description, version string) error {
+func (m *MySQL) Insert(id, author, filename string, dateexecuted time.Time,
+	count int, checksum, description, version string) error {
 	if m.DB == nil {
 		return ErrChangelogFailure
 	}
@@ -173,8 +174,32 @@ func (m *MySQL) Insert(id, author, filename string, count int, checksum, descrip
 	_, err := m.DB.Exec(`
 	INSERT INTO `+m.TableName+`
 	(id,author,filename,dateexecuted,orderexecuted,checksum,description,version)
-	VALUES(?,?,?,NOW(),?,?,?,?)`,
-		id, author, filename, count, checksum, description, version)
+	VALUES(?,?,?,?,?,?,?,?)`,
+		id, author, filename, dateexecuted, count, checksum, description, version)
+	return err
+}
+
+// Update will update a record from the database.
+func (m *MySQL) Update(id, author, filename string, dateexecuted time.Time,
+	count int, checksum, description, version string) error {
+	if m.DB == nil {
+		return ErrChangelogFailure
+	}
+
+	_, err := m.DB.Exec(`
+	UPDATE `+m.TableName+`
+	SET
+		dateexecuted = ?,
+		orderexecuted = ?,
+		checksum = ?,
+		description = ?,
+		version = ?
+	WHERE
+		id = ? AND 
+		author = ? AND
+		filename = ?
+	LIMIT 1`,
+		dateexecuted, count, checksum, description, version, id, author, filename)
 	return err
 }
 

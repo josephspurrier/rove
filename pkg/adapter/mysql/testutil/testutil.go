@@ -26,7 +26,7 @@ func SetEnv(unique string) {
 	os.Setenv(unique+"DB_PORT", "3306")
 	os.Setenv(unique+"DB_USERNAME", "root")
 	os.Setenv(unique+"DB_PASSWORD", "")
-	os.Setenv(unique+"DB_DATABASE", TestDatabaseName+unique)
+	os.Setenv(unique+"DB_NAME", TestDatabaseName+unique)
 	os.Setenv(unique+"DB_PARAMETER", "parseTime=true&allowNativePasswords=true&multiStatements=true")
 }
 
@@ -36,7 +36,7 @@ func UnsetEnv(unique string) {
 	os.Unsetenv(unique + "DB_PORT")
 	os.Unsetenv(unique + "DB_USERNAME")
 	os.Unsetenv(unique + "DB_PASSWORD")
-	os.Unsetenv(unique + "DB_DATABASE")
+	os.Unsetenv(unique + "DB_NAME")
 	os.Unsetenv(unique + "DB_PARAMETER")
 }
 
@@ -47,7 +47,7 @@ func Connection(unique string) *mysql.Connection {
 		Port:      3306,
 		Username:  "root",
 		Password:  "",
-		Database:  TestDatabaseName + unique,
+		Name:      TestDatabaseName + unique,
 		Parameter: "parseTime=true&allowNativePasswords=true&multiStatements=true",
 	}
 }

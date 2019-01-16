@@ -2,20 +2,26 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/josephspurrier/rove)](https://goreportcard.com/report/github.com/josephspurrier/rove)
 [![Build Status](https://travis-ci.org/josephspurrier/rove.svg)](https://travis-ci.org/josephspurrier/rove)
-[![Coverage Status](https://coveralls.io/repos/github/josephspurrier/rove/badge.svg?branch=master&timestamp=20190113-01)](https://coveralls.io/github/josephspurrier/rove?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/josephspurrier/rove/badge.svg?branch=master&timestamp=20190115-01)](https://coveralls.io/github/josephspurrier/rove?branch=master)
 [![GoDoc](https://godoc.org/github.com/josephspurrier/rove?status.svg)](https://godoc.org/github.com/josephspurrier/rove)
 
-## MySQL Database Migration Tool Based on Liquibase
+## MySQL Database Migration Tool Inspired by Liquibase
 
-This project is inspired by Liquibase, the database migration tool.
+The primary motivation behind this tool is to provide a simple and quick Go (instead of Java) based database migration tool that allows loading migrations from anywhere, including from inside your code.
 
-Database migrations help you modify a database between application upgrades. If your application needs a new table or a table modified, you can have your application make the change or you can use a tool to perform the migrations for you. You want to ensure you apply the migrations consistently so you don't put the database into a bad state. A good way manage the migration process is to track the state of the database. When using the MySQL adapter with Rove, a table called `rovechangelog` is created in the database to track which migrations have been applied. When you perform an update to your database, Rove will perform a few things for you. First, the tool will ensure no changes have been made to the changesets already applied to the database.
+Database migrations help you modify a database between application upgrades. If your application needs a new table or a table modified, you can have your application make the change or you can use a tool to perform the migrations for you. You want to ensure you apply the migrations consistently so you don't put the database into a bad state. A good way manage the migration process is to track the state of the database. When using the MySQL adapter with Rove, a table called `rovechangelog` is created in the database to track which migrations have been applied. When you perform an update to your database, Rove will perform a few things for you. First, the tool will ensure no changes have been made to the changesets already applied to the database. Checksums of the changesets are compared against the checksums in the changelog. Then, any new checksets that are not in the changelog are run against the database and then a new record is inserted into the changelog. Rove supports labeling changesets with a `tag` as well as rolling back to specific tags.
 
-It uses a slimmed down version of the DATABASECHANGELOG database table to store the applied changesets. It only supports SQL (no XML) migrations currently. For the most part, you can take your existing SQL migration files and use them with this tool. You can also import this package into your application and apply changesets without having to store the migrations on physical files. This allows you manage DB migrations inside of your application so you can distribute single binary applications.
+You can also import Rove into your Go application and apply changesets from strings instead of physical files. This allows you manage DB migrations inside of your application so you can distribute single binary applications.
 
-**Note:** Do not run this tool on a database that already has Liquibase migrations applied - they are not compatible because the checksums are calculated is different. The DATABASECHANGELOG database table which is used for storing the changesets is also different.
+### Rove vs Liquibase
+
+Rove and Liquibase use different changelog tables. Rove includes MySQL out of the box, but it supports adding your own adapters to work with any type of data storage. The Rove changesets can use a very similar plain SQL (no XML or JSON) file format for simplicity and portability. For the most teams, you'll be able use your existing SQL migration files with Rove without making any changes.
+
+To assist with switching from Liquibase to Rove, you can use the CLI tool with the `rove convert` argument to convert a Liquibase `DATABASECHANGELOG` table to a Rove `rovechangelog` table. If you don't run the `rove convert` command first on a database that was originally managed by Liquibase, Rove will try to rerun the same migrations over again if you use the same migration files. The tools use different changelog table names, table schemas, and use different methods for calculating their checksums.
 
 ## Dependencies
+
+These are the dependencies required to build Rove.
 
 ```
 gopkg.in/alecthomas/kingpin.v2
@@ -60,9 +66,9 @@ CREATE DATABASE webapi DEFAULT CHARSET = utf8 COLLATE = utf8_unicode_ci;
 go install
 
 # Apply the database migrations without a password.
-DB_USERNAME=root DB_HOSTNAME=127.0.0.1 DB_PORT=3306 DB_DATABASE=webapi rove all testdata/success.sql
+rove all testdata/success.sql --hostname=127.0.0.1 --port=3306 --username=root --name=webapi
 # or apply the database migrations with a password.
-DB_USERNAME=root DB_PASSWORD=somepassword DB_HOSTNAME=127.0.0.1 DB_PORT=3306 DB_DATABASE=webapi rove all testdata/success.sql
+rove all testdata/success.sql --hostname=127.0.0.1 --port=3306 --username=root --password=somepassword --name=webapi
 ```
 
 ## Rove Usage
@@ -81,7 +87,15 @@ usage: rove [<flags>] <command> [<args> ...]
 Performs database migration tasks.
 
 Flags:
-  --help  Show context-sensitive help (also try --help-long and --help-man).
+  --help                         Show context-sensitive help (also try --help-long and --help-man).
+  --checksum-mode=CHECKSUM-MODE  Set how to handle checksums that don't match [error (default), ignore, update].
+  --hostname=HOSTNAME            Database hostname or IP [string].
+  --port=PORT                    Database port [int].
+  --username=USERNAME            Database username [string].
+  --password=PASSWORD            Database password [string].
+  --name=NAME                    Database name [string].
+  --parameter=PARAMETER          Database parameters [string].
+  --envprefix=ENVPREFIX          Prefix for environment variables.
 
 Commands:
   help [<command>...]
@@ -94,7 +108,7 @@ Commands:
     Apply a specific number of changesets to the database.
 
   reset <file>
-    Run all rollbacks on the database.
+    Apply all rollbacks to the database.
 
   down <count> <file>
     Apply a specific number of rollbacks to the database.
@@ -105,28 +119,31 @@ Commands:
   rollback <name> <file>
     Run all rollbacks until the specified tag on the database.
 
+  convert <file>
+    Convert a Liquibase changelog table to a Rove changelog table.
+
   status
-    Output the list of migrations already applied to the database.
+    Output the list of changesets already applied to the database.
 ```
 
-#### Environment Variables
+#### Database Connection Variables
 
-The following environment variables can be read by the CLI app:
+You can either use the database flags or you can set the environment variables below to connect to the database. You can also prefix the environment variables using the `--envprefix` flag.
 
 ```
 DB_USERNAME - database username
 DB_PASSWORD - database password
 DB_HOSTNAME - IP or hostname of the database
 DB_PORT - port of the database
-DB_DATABASE - name of the database
+DB_NAME - name of the database
 DB_PARAMETER - parameters to append to the database connection string
 ```
 
 A full list of MySQL parameters can be found [here](https://github.com/go-sql-driver/mysql#parameters).
 
-#### Example Commands
+#### Example Commands and Output
 
-Here are examples of the commands:
+These examples will show how to interact with Rove and what the output will look like.
 
 ```bash
 # Set the environment variables to connect to the database.
@@ -134,68 +151,74 @@ export DB_USERNAME=root
 export DB_PASSWORD=password
 export DB_HOSTNAME=127.0.0.1
 export DB_PORT=3306
-export DB_DATABASE=webapi
+export DB_NAME=webapi
 export DB_PARAMETER="collation=utf8mb4_unicode_ci&parseTime=true"
 
 # Apply all of the changes from the SQL file to the database.
 rove all testdata/changeset.sql
 # Output:
-# Changeset applied: josephspurrier:1
-# Changeset applied: josephspurrier:2
-# Changeset applied: josephspurrier:3
+# Changesets applied (request: 0):
+# Applied: 1) josephspurrier:1 (success.sql) b7a8d1c3ea1cc2dc28a1de0e23628250 [tag='']
+# Applied: 2) josephspurrier:2 (success.sql) e3065c58bff00322c73eab057427f557 [tag='']
+# Applied: 3) josephspurrier:3 (success.sql) 57cc0b1c45cb72032bcaed07483d243d [tag='']
 
 # Try to apply all the changes again.
 rove all testdata/changeset.sql
 # Output:
-# Changeset already applied: josephspurrier:1
-# Changeset already applied: josephspurrier:2
-# Changeset already applied: josephspurrier:3
+# Changesets applied (request: 0):
+# Already applied: 1) josephspurrier:1 (success.sql) b7a8d1c3ea1cc2dc28a1de0e23628250 [tag='']
+# Already applied: 2) josephspurrier:2 (success.sql) e3065c58bff00322c73eab057427f557 [tag='']
+# Already applied: 3) josephspurrier:3 (success.sql) 57cc0b1c45cb72032bcaed07483d243d [tag='']
 
 # Rollback all of the changes to the database.
 rove reset testdata/changeset.sql
 # Output:
-# Rollback applied: josephspurrier:3
-# Rollback applied: josephspurrier:2
-# Rollback applied: josephspurrier:1
+# Changesets rollback (request: 0):
+# Applied: 3) josephspurrier:3 (success.sql) 57cc0b1c45cb72032bcaed07483d243d [tag='']
+# Applied: 2) josephspurrier:2 (success.sql) e3065c58bff00322c73eab057427f557 [tag='']
+# Applied: 1) josephspurrier:1 (success.sql) b7a8d1c3ea1cc2dc28a1de0e23628250 [tag='']
 
 # Apply only 1 new change to the database.
 rove up 1 testdata/success.sql
 # Output:
-# Changeset applied: josephspurrier:1
+# Changesets applied (request: 1):
+# Applied: 1) josephspurrier:1 (success.sql) b7a8d1c3ea1cc2dc28a1de0e23628250 [tag='']
 
 # Apply 1 more change to the database.
 rove up 1 testdata/changeset.sql
 # Output:
-# Changeset already applied: josephspurrier:1
-# Changeset applied: josephspurrier:2
+# Changesets applied (request: 1):
+# Already applied: 1) josephspurrier:1 (success.sql) b7a8d1c3ea1cc2dc28a1de0e23628250 [tag='']
+# Applied: 2) josephspurrier:2 (success.sql) e3065c58bff00322c73eab057427f557 [tag='']
 
 # Rollback only 1 change to the database.
 rove down 1 testdata/changeset.sql
 # Output:
-# Rollback applied: josephspurrier:2
+# Changesets rollback (request: 1):
+# Applied: 2) josephspurrier:2 (success.sql) e3065c58bff00322c73eab057427f557 [tag='']
 
 # Show a list of migrations already applied to the database.
 rove status
 # Output:
-# Changeset: josephspurrier:1
+# Changesets applied:
+# 1) josephspurrier:1 (success.sql) b7a8d1c3ea1cc2dc28a1de0e23628250 [tag='']
 ```
 
 ### Rove via Package Import
 
-Below is an example of how to include Rove in your own packages.
+Below is an example of how to include Rove in your own Go applications.
 
 ```go
 var changesets = `
 --changeset josephspurrier:1
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 CREATE TABLE user_status (
     id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,
     
     status VARCHAR(25) NOT NULL,
     
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     
     PRIMARY KEY (id)
 );
@@ -212,7 +235,7 @@ db, err := database.NewMySQL(&database.Connection{
   Hostname:  "127.0.0.1",
   Username:  "root",
   Password:  "password",
-  Database:  "main",
+  Name:      "main",
   Port:      3306,
   Parameter: "collation=utf8mb4_unicode_ci&parseTime=true",
 })
@@ -228,7 +251,7 @@ err = r.Migrate(0)
 
 ## Adapters
 
-Rove is designed to be extensible via adapters. There is one adapter included in the standard package:
+Rove is designed to be extensible via adapters. There is one adapter included in the package:
 
 * mysql
 
@@ -240,7 +263,7 @@ When creating an adapter, will need:
 
 - Struct that satisfies the `rove.Changelog` interface.
 - Struct that satisfies the `rove.Transaction` interface.
-- Table or data structure called a `Changelog` to persistently track the changes made by the Rove.
+- Table or data structure to use as the `changelog` to persistently track the changes made by the Rove.
 
 You should store the following fields (at a minimum) in your changelog. This will ensure your adapter can utilize all of the features of Rove.
 
@@ -254,20 +277,15 @@ You should store the following fields (at a minimum) in your changelog. This wil
 - tag
 - version
 
-These fields are not provided by Rove but you should track them in the changelog:
-
-- dateexecuted
-- orderexecuted
-
 ### Example Changelog
 
-Your changelog should look contain the same data as this table:
+Your changelog should contain the same fields as this table:
 
-| id | author | filename | dateexecuted | orderexecuted | checksum | description | tag | version |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | josephspurrier | success.sql | 2019-01-12 16:04:16 | 1 | f0685b... | Create the user_status table. | NULL | 1.0 |
-| 2 | josephspurrier | success.sql | 2019-01-12 16:04:16 | 2 | 3f81b0... |  | NULL | 1.0 |
-| 3 | josephspurrier | success.sql | 2019-01-12 16:04:16 | 3 | 57cc0b... |  | NULL | 1.0 |
+| id  | author         | filename    | dateexecuted        | orderexecuted | checksum  | description                   | tag  | version |
+| --- | -------------- | ----------- | ------------------- | ------------- | --------- | ----------------------------- | ---- | ------- |
+| 1   | josephspurrier | success.sql | 2019-01-12 16:04:16 | 1             | f0685b... | Create the user_status table. | NULL | 1.0     |
+| 2   | josephspurrier | success.sql | 2019-01-12 16:04:16 | 2             | 3f81b0... |                               | NULL | 1.0     |
+| 3   | josephspurrier | success.sql | 2019-01-12 16:04:16 | 3             | 57cc0b... |                               | NULL | 1.0     |
 
 ## Migration File Specifications
 
@@ -280,23 +298,22 @@ There are a few components of a changeset:
 - Include: must be prefixed by "--include " and must follow this format: `relativefilename.sql` (single line, optional)
 - Comments: any other line that starts with "--" (multi-line, optional)
 
-The number of lines or between changesets does not matter.
+Blank lines are ignored by Rove. The prefixes above are strict so you cannot change the case or add spacing. For instance, you cannot add a space after the dashes: `-- changeset`.
 
 Example migration file:
 
 ```sql
 --changeset josephspurrier:1
 --description Create the user status table.
---description Ensure no auto value on zero.
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
+--description Set deleted_at as a timestamp.
 CREATE TABLE user_status (
     id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,
     
     status VARCHAR(25) NOT NULL,
     
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     
     PRIMARY KEY (id)
 );
@@ -325,7 +342,7 @@ The description provides information about the changeset. It will be added as a 
 
 ### Rollback
 
-The rollback should be SQL reverting the changes made by the queries from the body.
+The rollback should be SQL which reverts the changes made by the changeset.
 
 ### Include
 

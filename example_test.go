@@ -10,15 +10,14 @@ import (
 func Example() {
 	var changesets = `
 --changeset josephspurrier:1
-SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 CREATE TABLE user_status (
     id TINYINT(1) UNSIGNED NOT NULL AUTO_INCREMENT,
     
     status VARCHAR(25) NOT NULL,
     
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL DEFAULT NULL,
     
     PRIMARY KEY (id)
 );
@@ -35,7 +34,7 @@ INSERT INTO user_status (id, status, created_at, updated_at, deleted) VALUES
 		Hostname:  "127.0.0.1",
 		Username:  "root",
 		Password:  "password",
-		Database:  "main",
+		Name:      "main",
 		Port:      3306,
 		Parameter: "collation=utf8mb4_unicode_ci&parseTime=true&multiStatements=true",
 	})

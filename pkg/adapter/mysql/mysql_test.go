@@ -2,6 +2,7 @@ package mysql_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/josephspurrier/rove/pkg/adapter/mysql"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,7 @@ func TestErrors(t *testing.T) {
 			_, err := rr.Count()
 			return err
 		}(),
-		rr.Insert("", "", "", 0, "", "", ""),
+		rr.Insert("", "", "", time.Now(), 0, "", "", ""),
 		func() error {
 			_, err := rr.Changesets(false)
 			return err

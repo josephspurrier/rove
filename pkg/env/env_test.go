@@ -13,7 +13,7 @@ import (
 type Connection struct {
 	Username string `json:"Username" env:"DB_USERNAME"`
 	Password string `json:"Password" env:"DB_PASSWORD"`
-	Database string `json:"Database" env:"DB_DATABASE"`
+	Name     string `json:"Database" env:"DB_NAME"`
 	Port     int    `json:"Port" env:"DB_PORT"`
 	SSL      bool   `json:"SSL" env:"DB_SSL"`
 }
@@ -25,7 +25,7 @@ func TestUnmarshalEmpty(t *testing.T) {
 
 	assert.Equal(t, "", c.Username)
 	assert.Equal(t, "", c.Password)
-	assert.Equal(t, "", c.Database)
+	assert.Equal(t, "", c.Name)
 	assert.Equal(t, 0, c.Port)
 	assert.Equal(t, false, c.SSL)
 }
@@ -33,7 +33,7 @@ func TestUnmarshalEmpty(t *testing.T) {
 func TestUnmarshalFilled(t *testing.T) {
 	os.Setenv("DB_USERNAME", "a")
 	os.Setenv("DB_PASSWORD", "B")
-	os.Setenv("DB_DATABASE", "c123")
+	os.Setenv("DB_NAME", "c123")
 	os.Setenv("DB_PORT", "3306")
 	os.Setenv("DB_SSL", "TRUE")
 
@@ -43,13 +43,13 @@ func TestUnmarshalFilled(t *testing.T) {
 
 	assert.Equal(t, "a", c.Username)
 	assert.Equal(t, "B", c.Password)
-	assert.Equal(t, "c123", c.Database)
+	assert.Equal(t, "c123", c.Name)
 	assert.Equal(t, 3306, c.Port)
 	assert.Equal(t, true, c.SSL)
 
 	os.Unsetenv("DB_USERNAME")
 	os.Unsetenv("DB_PASSWORD")
-	os.Unsetenv("DB_DATABASE")
+	os.Unsetenv("DB_NAME")
 	os.Unsetenv("DB_PORT")
 	os.Unsetenv("DB_SSL")
 }
@@ -57,7 +57,7 @@ func TestUnmarshalFilled(t *testing.T) {
 func TestUnmarshalFilledPrefix(t *testing.T) {
 	os.Setenv("TEST_DB_USERNAME", "a")
 	os.Setenv("TEST_DB_PASSWORD", "B")
-	os.Setenv("TEST_DB_DATABASE", "c123")
+	os.Setenv("TEST_DB_NAME", "c123")
 	os.Setenv("TEST_DB_PORT", "3306")
 	os.Setenv("TEST_DB_SSL", "TRUE")
 
@@ -67,13 +67,13 @@ func TestUnmarshalFilledPrefix(t *testing.T) {
 
 	assert.Equal(t, "a", c.Username)
 	assert.Equal(t, "B", c.Password)
-	assert.Equal(t, "c123", c.Database)
+	assert.Equal(t, "c123", c.Name)
 	assert.Equal(t, 3306, c.Port)
 	assert.Equal(t, true, c.SSL)
 
 	os.Unsetenv("TEST_DB_USERNAME")
 	os.Unsetenv("TEST_DB_PASSWORD")
-	os.Unsetenv("TEST_DB_DATABASE")
+	os.Unsetenv("TEST_DB_NAME")
 	os.Unsetenv("TEST_DB_PORT")
 	os.Unsetenv("TEST_DB_SSL")
 }

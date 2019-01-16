@@ -49,8 +49,8 @@ func parseToArray(r io.Reader, filename string) ([]changeset.Record, error) {
 		// Get the line without leading or trailing spaces.
 		line := strings.TrimSpace(scanner.Text())
 
-		// Skip blank lines.
-		if len(line) == 0 {
+		// Skip blank lines or liquibase header.
+		if len(line) == 0 || strings.HasPrefix(line, "--liquibase") {
 			continue
 		}
 
@@ -103,7 +103,10 @@ func parseToArray(r io.Reader, filename string) ([]changeset.Record, error) {
 		arr[len(arr)-1].AddChange(line)
 	}
 
-	return arr, nil
+	// Perform a verification check on duplicates.
+	_, err := parseArrayToMap(arr)
+
+	return arr, err
 }
 
 // parseFileToMap will parse a file into a map.
