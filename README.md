@@ -7,11 +7,15 @@
 
 ## MySQL Database Migration Tool Inspired by Liquibase
 
-The primary motivation behind this tool is to provide a simple and quick Go (instead of Java) based database migration tool that allows loading migrations from anywhere, including from inside your code.
+The primary motivation behind this tool is to provide a simple and quick Go (instead of Java) based database migration tool that allows loading migrations from anywhere, including from inside your code so you can distribute single binary applications. You write the migration and rollback SQL, Rove will apply it for you properly.
 
-Database migrations help you modify a database between application upgrades. If your application needs a new table or a table modified, you can have your application make the change or you can use a tool to perform the migrations for you. You want to ensure you apply the migrations consistently so you don't put the database into a bad state. A good way manage the migration process is to track the state of the database. When using the MySQL adapter with Rove, a table called `rovechangelog` is created in the database to track which migrations have been applied. When you perform an update to your database, Rove will perform a few things for you. First, the tool will ensure no changes have been made to the changesets already applied to the database. Checksums of the changesets are compared against the checksums in the changelog. Then, any new checksets that are not in the changelog are run against the database and then a new record is inserted into the changelog. Rove supports labeling changesets with a `tag` as well as rolling back to specific tags.
+### How do migrations work?
 
-You can also import Rove into your Go application and apply changesets from strings instead of physical files. This allows you manage DB migrations inside of your application so you can distribute single binary applications.
+Database migrations are necessary when you make changes to your applications. You may need a new table or a new column so you have to write the SQL commands to make the changes. The tricky piece is when you perform an upgrade, how do you manage which SQL queries will run? Do you run all of them again and then the new ones after? Or is there an easy way to track which queries have been run so you only run new ones? What if you have to rollback your database because of a feature that was released too early and is causing problem? How do you manage those queries? You can definitely write your own code to manage the migration process, but Rove makes the process much easier for you. You also don't have to convert your SQL code to a another format like JSON or XML, you can just add a few comments around it and Rove will handle the rest.
+
+### How does Rove work?
+
+You'll need to write your changes queries and rollback queries in migration files. These are plain SQL files that can be imported directly into MySQL. Rove just uses comments to help break them into smaller manageable pieces. When you run tell Rove to apply your changes, a table called `rovechangelog` is created in the database to track which changesets have been applied and metadata about them. The tool will ensure no changes have been made to the existing changesets that are already in the database. Changeset checksums are then compared against the changelog table checksums. Any new changesets that are not in the changelog are applied to the database and then a new record is inserted into the changelog for each changeset. Rove supports labeling changesets with a `tag` as well as rolling back to specific tags.
 
 ### Rove vs Liquibase
 
