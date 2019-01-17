@@ -237,8 +237,7 @@ func TestMigrationFailDuplicate(t *testing.T) {
 	// Get the status.
 	s, err := r.Status()
 	assert.Nil(t, err)
-	assert.Equal(t, "2", s.ID)
-	assert.Equal(t, "josephspurrier", s.Author)
+	assert.Nil(t, s)
 
 	testutil.TeardownDatabase(unique)
 }

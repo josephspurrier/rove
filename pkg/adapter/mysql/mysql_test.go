@@ -14,7 +14,7 @@ func TestConnection(t *testing.T) {
 	c.Password = "password"
 	c.Hostname = "localhost"
 	c.Port = 3306
-	c.Database = "test"
+	c.Name = "test"
 	c.Parameter = "collation=utf8mb4_unicode_ci"
 
 	// Test with database.
