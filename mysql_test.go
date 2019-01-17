@@ -538,6 +538,7 @@ func TestConvert(t *testing.T) {
 
 	// Create the Liquibase database table.
 	b, err := ioutil.ReadFile("testdata/lbsetup.sql")
+	assert.Nil(t, err)
 	_, err = m.DB.Exec(string(b))
 	assert.Nil(t, err)
 
