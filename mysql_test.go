@@ -127,6 +127,12 @@ func TestFileLoadFailure(t *testing.T) {
 				return err
 			}(),
 			rr.Tag("none"),
+			func() error {
+				// Create a new MySQL database object.
+				m, err := mysql.New(testutil.Connection(unique))
+				assert.Nil(t, err)
+				return rr.Convert(m.DB)
+			}(),
 		} {
 			assert.NotNil(t, v)
 		}
@@ -521,4 +527,34 @@ func (t *TxMock) Rollback() error {
 // Exec will run a query on the database.
 func (t *TxMock) Exec(query string) error {
 	return t.ExecError
+}
+
+func TestConvert(t *testing.T) {
+	_, unique := testutil.SetupDatabase()
+
+	// Create a new MySQL database object.
+	m, err := mysql.New(testutil.Connection(unique))
+	assert.Nil(t, err)
+
+	// Create the Liquibase database table.
+	b, err := ioutil.ReadFile("testdata/lbsetup.sql")
+	_, err = m.DB.Exec(string(b))
+	assert.Nil(t, err)
+
+	// Set up rove.
+	r := rove.NewFileMigration(m, "testdata/success.sql")
+	r.Verbose = true
+
+	// Run convert.
+	err = r.Convert(m.DB)
+	assert.Nil(t, err)
+
+	// Get the status.
+	s, err := r.Status()
+	assert.Nil(t, err)
+	assert.Equal(t, "3", s.ID)
+	assert.Equal(t, "josephspurrier", s.Author)
+	assert.Equal(t, "", s.Tag)
+
+	testutil.TeardownDatabase(unique)
 }

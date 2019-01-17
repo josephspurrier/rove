@@ -3,6 +3,7 @@ package rove
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -41,6 +42,9 @@ func (r *Rove) Convert(db *sqlx.DB) error {
 	if err != nil {
 		return err
 	}
+
+	log.Println(results)
+	log.Println(m)
 
 	// Loop through the Liquibase migrations.
 	for _, cs := range results {
